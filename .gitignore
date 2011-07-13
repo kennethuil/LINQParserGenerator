@@ -1,4 +1,6 @@
 *.suo
 *.user
 _ReSharper.*
+*.cache
+*.vspscc
 
