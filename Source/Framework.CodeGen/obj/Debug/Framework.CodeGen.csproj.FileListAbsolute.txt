@@ -1,0 +1,5 @@
+C:\Projects\Parsing\Source\Framework.CodeGen\bin\Debug\Framework.CodeGen.dll
+C:\Projects\Parsing\Source\Framework.CodeGen\bin\Debug\Framework.CodeGen.pdb
+C:\Projects\Parsing\Source\Framework.CodeGen\obj\Debug\ResolveAssemblyReference.cache
+C:\Projects\Parsing\Source\Framework.CodeGen\obj\Debug\Framework.CodeGen.dll
+C:\Projects\Parsing\Source\Framework.CodeGen\obj\Debug\Framework.CodeGen.pdb
