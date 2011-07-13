@@ -464,18 +464,118 @@ namespace ParsingTests
         
 
         [Test]
-        public void TestRegexCompile()
+        public void TestRegexCompile1()
         {
-            var builder = new RegexCharNFABuilder(_expressionHelper);
-            var expr = builder.CreateRegexParser("TestRegexCompile");
-            var regexCompiler = expr.Compile();
+            var regexCompiler = GetRegexCompiler();
+            var classifier = GetClassifier();
 
             var t1 = new Terminal<char>
             {
                 Name = "T1",
                 InitialState = regexCompiler("x")
             };
-            var classifier = _classifierGen.Classifier<TestStringInput, bool>()
+            var clexpr = classifier.Generate(new Dictionary<Terminal<char>, Expression<Func<TestStringInput, bool>>> { { t1, x => true } });
+            var f = clexpr.Compile();
+            Assert.IsTrue(f(new TestStringInput("x")));
+            Assert.IsFalse(f(new TestStringInput("abcsx")));
+            Assert.IsFalse(f(new TestStringInput("yyyx")));
+        }
+
+        [Test]
+        public void TestRegexCompile2()
+        {
+            var regexCompiler = GetRegexCompiler();
+            var classifier = GetClassifier();
+
+            var t2 = new Terminal<char> { Name = "T2", InitialState = regexCompiler("a*b") };
+            var f = classifier.Generate(new Dictionary<Terminal<char>, Expression<Func<TestStringInput, bool>>> { { t2, x => true } })
+                .Compile();
+            Assert.IsFalse(f(new TestStringInput("x")));
+            Assert.IsTrue(f(new TestStringInput("aaaaaab")));
+            Assert.IsTrue(f(new TestStringInput("b")));
+            Assert.IsTrue(f(new TestStringInput("ab")));
+            Assert.IsFalse(f(new TestStringInput("aaaaa")));
+        }
+
+        [Test]
+        public void TestRegexCompile3()
+        {
+            var regexCompiler = GetRegexCompiler();
+            var classifier = GetClassifier();
+
+            var t3 = new Terminal<char> {Name = "T3", InitialState = regexCompiler(@"\d")};
+            var f = classifier.Generate(new Dictionary<Terminal<char>, Expression<Func<TestStringInput, bool>>> { { t3, x => true } })
+                .Compile();
+            Assert.IsTrue(f(new TestStringInput("243")));
+            Assert.IsTrue(f(new TestStringInput("9")));
+            Assert.IsFalse(f(new TestStringInput("ac39")));
+        }
+
+        [Test]
+        public void TestRegexCompile4()
+        {
+            var regexCompiler = GetRegexCompiler();
+            var classifier = GetClassifier();
+
+            var t4 = new Terminal<char> { Name = "T4", InitialState = regexCompiler(@"\d+\.") };
+            var f = classifier.Generate(new Dictionary<Terminal<char>, Expression<Func<TestStringInput, bool>>> { { t4, x => true } })
+                .Compile();
+            Assert.IsTrue(f(new TestStringInput("143.")));
+            Assert.IsTrue(f(new TestStringInput("4.3")));
+            Assert.IsFalse(f(new TestStringInput(".22")));
+            Assert.IsFalse(f(new TestStringInput("43")));
+        }
+
+        [Test]
+        public void TestRegexCompile5()
+        {
+            var regexCompiler = GetRegexCompiler();
+            var classifier = GetClassifier();
+
+            var t5 = new Terminal<char> { Name = "T5", InitialState = regexCompiler(@"\d+(\.\d+)") };
+            var f = classifier.Generate(new Dictionary<Terminal<char>, Expression<Func<TestStringInput, bool>>> { { t5, x=>true}})
+                .Compile();
+            Assert.IsTrue(f(new TestStringInput("143.5")));
+            Assert.IsFalse(f(new TestStringInput("143")));
+        }
+
+        [Test]
+        public void TestRegexCompile6()
+        {
+            var regexCompiler = GetRegexCompiler();
+            var classifier = GetClassifier();
+
+            var t = new Terminal<char> { Name = "T6", InitialState = regexCompiler(@"ab?") };
+            var f = classifier.Generate(new Dictionary<Terminal<char>, Expression<Func<TestStringInput, bool>>> { { t, x=>true}})
+                .Compile();
+            Assert.IsTrue(f(new TestStringInput("ab")));
+            Assert.IsTrue(f(new TestStringInput("acx")));
+
+        }
+
+        [Test]
+        public void TestRegexCompile7()
+        {
+            var regexCompiler = GetRegexCompiler();
+            var classifier = GetClassifier();
+
+            var t6 = new Terminal<char> { Name = "T7", InitialState = regexCompiler(@"\d+(\.\d+)?") };
+            var f = classifier.Generate(new Dictionary<Terminal<char>, Expression<Func<TestStringInput, bool>>> { { t6, x => true } })
+                .Compile();
+            Assert.IsTrue(f(new TestStringInput("143.5")));
+            Assert.IsTrue(f(new TestStringInput("143")));
+        }
+
+        private Func<string, FiniteAutomatonState<char>> GetRegexCompiler()
+        {
+            var builder = new RegexCharNFABuilder(_expressionHelper);
+            var expr = builder.CreateRegexParser("TestRegexCompile");
+            return expr.Compile();
+        }
+
+        private TerminalClassifierSession<char, TestStringInput, bool> GetClassifier()
+        {
+            return _classifierGen.Classifier<TestStringInput, bool>()
                 .HasCurrentCharExprIs(r => r.HasCurrentChar())
                 .CurrentCharExprIs(r => r.CurrentChar())
                 .MoveNextCharExprIs(r => r.MoveNextChar())
@@ -484,49 +584,6 @@ namespace ParsingTests
                 .GetFromMarkExprIs(r => r.GetFromMarkedPos())
                 .RejectHandlerIs(x => false)
                 .EofHandlerIs(x => false);
-
-            var clexpr = classifier.Generate(new Dictionary<Terminal<char>, Expression<Func<TestStringInput, bool>>> { { t1, x => true } });
-            var f = clexpr.Compile();
-            Assert.IsTrue(f(new TestStringInput("x")));
-            Assert.IsFalse(f(new TestStringInput("abcsx")));
-            Assert.IsFalse(f(new TestStringInput("yyyx")));
-
-            var t2 = new Terminal<char> { Name = "T2", InitialState = regexCompiler("a*b") };
-            f = classifier.Generate(new Dictionary<Terminal<char>, Expression<Func<TestStringInput, bool>>> { { t2, x => true } })
-                .Compile();
-            Assert.IsFalse(f(new TestStringInput("x")));
-            Assert.IsTrue(f(new TestStringInput("aaaaaab")));
-            Assert.IsTrue(f(new TestStringInput("b")));
-            Assert.IsTrue(f(new TestStringInput("ab")));
-            Assert.IsFalse(f(new TestStringInput("aaaaa")));
-
-            var t3 = new Terminal<char> {Name = "T3", InitialState = regexCompiler(@"\d")};
-            f = classifier.Generate(new Dictionary<Terminal<char>, Expression<Func<TestStringInput, bool>>> { { t3, x => true } })
-                .Compile();
-            Assert.IsTrue(f(new TestStringInput("243")));
-            Assert.IsTrue(f(new TestStringInput("9")));
-            Assert.IsFalse(f(new TestStringInput("ac39")));
-
-            var t4 = new Terminal<char> { Name = "T4", InitialState = regexCompiler(@"\d+\.") };
-            f = classifier.Generate(new Dictionary<Terminal<char>, Expression<Func<TestStringInput, bool>>> { { t4, x => true } })
-                .Compile();
-            Assert.IsTrue(f(new TestStringInput("143.")));
-            Assert.IsTrue(f(new TestStringInput("4.3")));
-            Assert.IsFalse(f(new TestStringInput(".22")));
-            Assert.IsFalse(f(new TestStringInput("43")));
-
-            var t5 = new Terminal<char> { Name = "T5", InitialState = regexCompiler(@"\d+(\.\d+)") };
-            f = classifier.Generate(new Dictionary<Terminal<char>, Expression<Func<TestStringInput, bool>>> { { t5, x=>true}})
-                .Compile();
-            Assert.IsTrue(f(new TestStringInput("143.5")));
-            Assert.IsFalse(f(new TestStringInput("143")));
-
-            // TODO: Find out why the ? quantifier doesn't work.
-            //var t6 = new Terminal<char> { Name = "T6", InitialState = regexCompiler(@"\d+(\.\d+)?") };
-            //f = classifier.Generate(new Dictionary<Terminal<char>, Expression<Func<TestStringInput, bool>>> { { t6, x => true } })
-            //    .Compile();
-            //Assert.IsTrue(f(new TestStringInput("143.5")));
-            //Assert.IsTrue(f(new TestStringInput("143")));
         }
 
         [Test]

@@ -240,6 +240,8 @@ namespace Framework.Parsing
                 ((a, b) => Range(a, b)));
             g.ZeroOrMoreRule.Action = ((Expression<Func<NFAFragment<char>, NFAFragment<char>>>)
                 ((x) => ZeroOrMore(x)));
+            g.ZeroOrOneRule.Action = ((Expression<Func<NFAFragment<char>, NFAFragment<char>>>)
+                ((x => ZeroOrOne(x))));
 
             return g;
         }
