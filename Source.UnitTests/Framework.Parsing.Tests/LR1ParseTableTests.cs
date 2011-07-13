@@ -38,73 +38,13 @@ namespace ParsingTests
 
         Terminal<char> GetNumberTerminal<T>(Expression<Func<string,T>> action)
         {
-
-            /*
             var term = new Terminal<char> { Name = "Number", ValueType = typeof(T),
                 InitialState = _regexCompiler(@"\d+(\.\d+)?")};
             return term;
-             */
-            
-            Terminal<char> term = new Terminal<char>
-            {
-                Name = "Number",
-                ValueType = typeof(T)
-            };
-
-            FiniteAutomatonState<char> digitAfterDecimal = new FiniteAutomatonState<char>
-            {
-                IsAccepting = true,
-                Transitions = new [] {
-                    new FiniteAutomatonStateTransition<char> {
-                        CharacterMatchExpression = _matchDigit
-                    }
-                }
-            };
-            digitAfterDecimal.Transitions.First().Target = digitAfterDecimal;
-            
-            FiniteAutomatonState<char> firstDigitAfterDecimal = new FiniteAutomatonState<char>
-            {
-                Transitions = new[] {
-                    new FiniteAutomatonStateTransition<char> {
-                        CharacterMatchExpression = _matchDigit,
-                        Target = digitAfterDecimal
-                    }
-                }
-            };
-
-            FiniteAutomatonState<char> digitBeforeDecimal = new FiniteAutomatonState<char>
-            {
-                IsAccepting = true,
-                Transitions = new[] {
-                    new FiniteAutomatonStateTransition<char> {
-                        CharacterMatchExpression = _matchDigit
-                    },
-                    new FiniteAutomatonStateTransition<char> {
-                        CharacterMatchExpression = _matchPeriod,
-                        Target = firstDigitAfterDecimal
-                    }
-                }
-            };
-            digitBeforeDecimal.Transitions.First().Target = digitBeforeDecimal;
-
-            FiniteAutomatonState<char> firstDigitBeforeDecimal = new FiniteAutomatonState<char>
-            {
-                Transitions = new[] {
-                    new FiniteAutomatonStateTransition<char> {
-                        CharacterMatchExpression = _matchDigit,
-                        Target = digitBeforeDecimal
-                    }
-                }
-            };
-
-            term.InitialState = firstDigitBeforeDecimal;
-            return term;
-             
         }
 
         public Terminal<char> GetLiteralMatcher(string literal)
         {
-
             Terminal<char> term = new Terminal<char>();
             FiniteAutomatonState<char>[] states = new FiniteAutomatonState<char>[literal.Length + 1];
 
@@ -131,6 +71,7 @@ namespace ParsingTests
             }
             term.InitialState = states[0];
             return term;
+             
         }
 
         [TestFixtureSetUp]
@@ -149,49 +90,18 @@ namespace ParsingTests
             _whitespace = new Terminal<char>
             {
                 Name = "Whitespace",
-                ValueType = typeof(void)
+                ValueType = typeof(void),
+                InitialState = _regexCompiler(@"\s+")
             };
-
-            Expression<Func<char, bool>> matchSpace = (c) => char.IsWhiteSpace(c);
-            var whitespaceChar = new FiniteAutomatonState<char>
-            {
-                IsAccepting = true,
-                Transitions = new[] {
-                    new FiniteAutomatonStateTransition<char> {
-                        CharacterMatchExpression = matchSpace
-                    }
-                }
-            };
-
-            whitespaceChar.Transitions.First().Target = whitespaceChar;
-
-            var firstWhitespace = new FiniteAutomatonState<char>
-            {
-                Transitions = new[] {
-                    new FiniteAutomatonStateTransition<char> {
-                        CharacterMatchExpression = matchSpace,
-                        Target=whitespaceChar
-                    }
-                }
-            };
-
-            _whitespace.InitialState = firstWhitespace;
 
             // Arithmetic operators
-            _add = GetLiteralMatcher("+");
-            _add.Name = "Add";
-            _sub = GetLiteralMatcher("-");
-            _sub.Name = "Sub";
-            _mul = GetLiteralMatcher("*");
-            _mul.Name = "Mul";
-            _div = GetLiteralMatcher("/");
-            _div.Name = "Div";
-            _exponent = GetLiteralMatcher("^");
-            _exponent.Name = "Exponent";
-            _openParen = GetLiteralMatcher("(");
-            _openParen.Name = "OpenParen";
-            _closeParen = GetLiteralMatcher(")");
-            _closeParen.Name = "CloseParen";
+            _add = new Terminal<char> { Name = "Add", InitialState = _regexCompiler(@"\+") };
+            _sub = new Terminal<char> { Name = "Sub", InitialState = _regexCompiler(@"\-") };
+            _mul = new Terminal<char> { Name = "Mul", InitialState = _regexCompiler(@"\*") };
+            _div = new Terminal<char> { Name = "Div", InitialState = _regexCompiler(@"\/") };
+            _exponent = new Terminal<char> { Name = "Exponent", InitialState = _regexCompiler(@"\^") };
+            _openParen = new Terminal<char> { Name = "OpenParen", InitialState = _regexCompiler(@"\(") };
+            _closeParen = new Terminal<char> { Name = "CloseParen", InitialState = _regexCompiler(@"\)") };
         }
 
         enum TokenType
