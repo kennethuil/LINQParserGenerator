@@ -76,11 +76,6 @@ namespace Framework.Parsing
             }
         }
 
-        public RegexGrammar CreateRegexGrammar()
-        {
-            return new RegexGrammar();
-        }
-
         public static NFAFragment<TChar> Alternate<TChar>(NFAFragment<TChar> a, NFAFragment<TChar> b)
             where TChar : IComparable<TChar>, IEquatable<TChar>
         {
@@ -380,7 +375,7 @@ namespace Framework.Parsing
         }
 
 
-        public static List<T> AppendToList<T>(List<T> l, T item)
+        public static IList<T> AppendToList<T>(IList<T> l, T item)
         {
             l.Add(item);
             return l;

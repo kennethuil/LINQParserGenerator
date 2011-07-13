@@ -17,7 +17,7 @@ namespace Framework.Parsing
         }
         [NonSerialized]
         Type _valueType;
-        public Type ValueType
+        public virtual Type ValueType
         {
             get { return _valueType; }
             set { _valueType = value; }

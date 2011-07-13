@@ -76,4 +76,101 @@ namespace Framework.Parsing
             return sb.ToString();
         } 
     }
+
+    [Serializable]
+    public class GrammarRule<TValue> : GrammarRule
+    {
+        public new Expression<Func<TValue>> Action
+        {
+            get
+            {
+                return (Expression<Func<TValue>>)base.Action;
+            }
+            set
+            {
+                base.Action = value;
+            }
+        }
+    }
+
+    [Serializable]
+    public class GrammarRule<TParam0, TValue> : GrammarRule
+    {
+        public new Expression<Func<TParam0, TValue>> Action
+        {
+            get
+            {
+                return (Expression<Func<TParam0, TValue>>)base.Action;
+            }
+            set
+            {
+                base.Action = value;
+            }
+        }
+    }
+
+    [Serializable]
+    public class GrammarRule<TParam0, TParam1, TValue> : GrammarRule
+    {
+        public new Expression<Func<TParam0, TParam1, TValue>> Action
+        {
+            get
+            {
+                return (Expression<Func<TParam0, TParam1, TValue>>)base.Action;
+            }
+            set
+            {
+                base.Action = value;
+            }
+        }
+    }
+
+    [Serializable]
+    public class GrammarRule<TParam0, TParam1, TParam2, TValue> : GrammarRule
+    {
+        public new Expression<Func<TParam0, TParam1, TParam2, TValue>> Action
+        {
+            get
+            {
+                return (Expression<Func<TParam0, TParam1, TParam2, TValue>>)base.Action;
+            }
+            set
+            {
+                base.Action = value;
+            }
+        }
+    }
+
+    [Serializable]
+    public class GrammarRule<TParam0, TParam1, TParam2, TParam3, TValue> : GrammarRule
+    {
+        public new Expression<Func<TParam0, TParam1, TParam2, TParam3, TValue>> Action
+        {
+            get
+            {
+                return (Expression<Func<TParam0, TParam1, TParam2, TParam3, TValue>>)base.Action;
+            }
+            set
+            {
+                base.Action = value;
+            }
+        }
+    }
+
+    [Serializable]
+    public class GrammarRule<TParam0, TParam1, TParam2, TParam3, TParam4, TValue> : GrammarRule
+    {
+        public new Expression<Func<TParam0, TParam1, TParam2, TParam3, TParam4, TValue>> Action
+        {
+            get
+            {
+                return (Expression<Func<TParam0, TParam1, TParam2, TParam3, TParam4, TValue>>)base.Action;
+            }
+            set
+            {
+                base.Action = value;
+            }
+        }
+    }
+
 }

@@ -263,7 +263,7 @@ namespace ParsingTests
             public abstract void Concat(string x1, string x2);
         }
 
-        public static List<T> GetAppend<T>(List<T> l, T item)
+        public static IList<T> GetAppend<T>(IList<T> l, T item)
         {
             l.Add(item);
             return l;
@@ -272,48 +272,33 @@ namespace ParsingTests
         [Test]
         public void TestRegexParse()
         {
-            RegexGrammar g = new RegexGrammar();
-            // Value types for symbols.
-            g.CharClassEscape.ValueType = typeof(string);
-            g.CharList.ValueType = typeof(List<string>);
-            g.ConcatExpr.ValueType = typeof(string);
-            g.Expr.ValueType = typeof(string);
-            g.OtherChar.ValueType = typeof(string);
-            g.QuantExpr.ValueType = typeof(string);
-            g.SelectChar.ValueType = typeof(string);
-            g.SelectNotChar.ValueType = typeof(string);
-            g.SelectRangeChar.ValueType = typeof(string);
-            g.SimpleChar.ValueType = typeof(String);
-            g.SingleChar.ValueType = typeof(String);
-            g.SingleCharEscape.ValueType = typeof(string);
-            g.SpecificChar.ValueType = typeof(string);
-            g.SubExpr.ValueType = typeof(string);
+            var g = new RegexGrammar<string>();
 
             // Actions for rules
-            g.CapturingGroupRule.Action = ((Expression<Func<string,string>>)((s)=>s + "Capture(" + s
-                + ")"));
-            g.ConcatRule.Action = ((Expression<Func<string,string,string>>)((s1,s2)=>"Concat(" + s1 +
-                ", " + s2 + ")"));
-            g.AlternateRule.Action = ((Expression<Func<string, string, string>>)((s1, s2) => "Alternate("
-                + s1 + ", " + s2 + ")"));
-            g.SelectCharListAppendRule.Action = ((Expression<Func<List<string>, string, List<string>>>)
-                ((l, s) => GetAppend(l,s)));
-            g.SelectCharListSingleonRule.Action = ((Expression<Func<string, List<string>>>)
-                ((s) => new List<string> { s }));
-            g.SelectCharRule.Action = ((Expression<Func<List<string>, string>>)
-                ((l) => (l.Count == 1) ? l[0] : "SelectChar(" + string.Join(", ", l) + ")"));
-            g.SelectNotCharRule.Action = ((Expression<Func<List<string>, string>>)
-                ((l) => "SelectNotChar(" + string.Join(", ", l) + ")"));
-            g.SelectRangeCharRule.Action = ((Expression<Func<string, string, string>>)
-                ((s1, s2) => "SelectRange(" + s1 + ", " + s2 + ")"));
-            g.OneOrMoreRule.Action = ((Expression<Func<string, string>>)
-                ((s) => "OneOrMore(" + s + ")"));
-            g.ZeroOrMoreRule.Action = ((Expression<Func<string, string>>)
-                ((s) => "ZeroOrMore(" + s + ")"));
-            g.ZeroOrOneRule.Action = ((Expression<Func<string, string>>)
-                ((s) => "ZeroOrOne(" + s + ")"));
-            g.RegexRule.Action = ((Expression<Func<string, string>>)
-                ((s) => "Regex(" + s + ")"));
+            g.CapturingGroupRule.Action = ((s)=>s + "Capture(" + s
+                + ")");
+            g.ConcatRule.Action = ((s1,s2)=>"Concat(" + s1 +
+                ", " + s2 + ")");
+            g.AlternateRule.Action = ((s1, s2) => "Alternate("
+                + s1 + ", " + s2 + ")");
+            g.SelectCharListAppendRule.Action = 
+                ((l, s) => GetAppend(l,s));
+            g.SelectCharListSingleonRule.Action = 
+                ((s) => new List<string> { s });
+            g.SelectCharRule.Action = 
+                ((l) => (l.Count == 1) ? l[0] : "SelectChar(" + string.Join(", ", l) + ")");
+            g.SelectNotCharRule.Action = 
+                ((l) => "SelectNotChar(" + string.Join(", ", l) + ")");
+            g.SelectRangeCharRule.Action = 
+                ((s1, s2) => "SelectRange(" + s1 + ", " + s2 + ")");
+            g.OneOrMoreRule.Action = 
+                ((s) => "OneOrMore(" + s + ")");
+            g.ZeroOrMoreRule.Action = 
+                ((s) => "ZeroOrMore(" + s + ")");
+            g.ZeroOrOneRule.Action = 
+                ((s) => "ZeroOrOne(" + s + ")");
+            g.RegexRule.Action = 
+                ((s) => "Regex(" + s + ")");
             
             // Time to construct a parser.
             // TODO: Some of this needs to be rolled up even more.
@@ -335,7 +320,7 @@ namespace ParsingTests
                 .NonTerminalIs(ps => ps.CurrentNonTerminal)
                 .TerminalValueExprIs<string>(ps => (string)ps.CurrentTerminalValue)
                 .NonTerminalValueExprIs<string>(ps => (string)ps.CurrentNonTerminalValue)
-                .NonTerminalValueExprIs<List<string>>(ps=>(List<string>)ps.CurrentNonTerminalValue)
+                .NonTerminalValueExprIs<IList<string>>(ps=>(IList<string>)ps.CurrentNonTerminalValue)
                 //.IncludeSymbols(true)
                 .Generate("ParseExpr", parseTable, classifier);
 

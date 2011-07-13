@@ -28,4 +28,41 @@ namespace Framework.Parsing
             set { _action = value; }
         }
     }
+
+    [Serializable]
+    public class Terminal<TChar, TValue> : Terminal<TChar>
+        where TChar : IComparable<TChar>, IEquatable<TChar>
+    {
+        public new Expression<Func<IEnumerable<TChar>, TValue>> Action
+        {
+            get { return (Expression<Func<IEnumerable<TChar>, TValue>>)base.Action; }
+            set { base.Action = value; }
+        }
+
+        public Expression<Func<string, TValue>> StringAction
+        {
+            get { return (Expression<Func<string, TValue>>)base.Action; }
+            set 
+            {
+                // Can only pass strings into actions when TChar is char.
+                if (typeof(TChar) != typeof(char))
+                    throw new NotSupportedException();
+
+                base.Action = value; 
+            }
+        }
+
+        public override Type ValueType
+        {
+            get
+            {
+                return typeof(TValue);
+            }
+            set
+            {
+                if (value != typeof(TValue))
+                    throw new NotSupportedException();
+            }
+        }
+    }
 }

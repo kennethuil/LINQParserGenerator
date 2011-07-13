@@ -30,7 +30,7 @@ namespace Framework.Parsing
             public int CurrentNonTerminal { get; set; }
             public NFAFragment<char> CurrentTerminalValue { get; set; }
             public NFAFragment<char> CurrentNonTerminalValue { get; set; }
-            public List<NFAFragment<char>> CurrentNonTerminalListValue { get; set; }
+            public IList<NFAFragment<char>> CurrentNonTerminalListValue { get; set; }
             public FiniteAutomatonState<char> CurrentRegexBeginState { get; set; }
         }
 
@@ -199,10 +199,11 @@ namespace Framework.Parsing
                        };
         }
 
-        public RegexGrammar CreateRegexConversionGrammar(string prefix)
+        public RegexGrammar<NFAFragment<char>> CreateRegexConversionGrammar(string prefix)
         {
-            RegexGrammar g = new RegexGrammar();
+            RegexGrammar<NFAFragment<char>> g = new RegexGrammar<NFAFragment<char>>();
             // Value types for symbols.
+            /*
             g.CharClassEscape.ValueType = typeof(NFAFragment<char>);
             g.CharList.ValueType = typeof(List<NFAFragment<char>>);
             g.ConcatExpr.ValueType = typeof(NFAFragment<char>);
@@ -217,31 +218,32 @@ namespace Framework.Parsing
             g.SingleCharEscape.ValueType = typeof(NFAFragment<char>);
             g.SpecificChar.ValueType = typeof(NFAFragment<char>);
             g.SubExpr.ValueType = typeof(NFAFragment<char>);
+             */
 
-            g.OtherChar.Action = ((Expression<Func<string, NFAFragment<char>>>)((s) => OtherChar(s)));
-            g.SingleCharEscape.Action = ((Expression<Func<string, NFAFragment<char>>>)((s) => SingleCharEscape(s)));
-            g.CharClassEscape.Action = ((Expression<Func<string, NFAFragment<char>>>)((s) => CharClassEscape(s)));
+            g.OtherChar.StringAction = ((s) => OtherChar(s));
+            g.SingleCharEscape.StringAction = ((s) => SingleCharEscape(s));
+            g.CharClassEscape.StringAction = ((s) => CharClassEscape(s));
 
-            g.AlternateRule.Action = ((Expression<Func<NFAFragment<char>, NFAFragment<char>, NFAFragment<char>>>)
-                ((a, b) => Alternate(a, b)));
-            g.ConcatRule.Action = ((Expression<Func<NFAFragment<char>, NFAFragment<char>, NFAFragment<char>>>)
-                ((a, b) => Concat(a, b)));
-            g.OneOrMoreRule.Action = ((Expression<Func<NFAFragment<char>, NFAFragment<char>>>)
-                ((a) => OneOrMore(a)));
-            g.SelectCharListSingleonRule.Action = ((Expression<Func<NFAFragment<char>, List<NFAFragment<char>>>>)
-                ((a) => new List<NFAFragment<char>> { a }));
-            g.SelectCharListAppendRule.Action = ((Expression<Func<List<NFAFragment<char>>, NFAFragment<char>, List<NFAFragment<char>>>>)
-                ((a, b) => AppendToList(a, b)));
-            g.SelectCharRule.Action = ((Expression<Func<List<NFAFragment<char>>, NFAFragment<char>>>)
-                ((l) => Select(l)));
-            g.SelectNotCharRule.Action = ((Expression<Func<List<NFAFragment<char>>, NFAFragment<char>>>)
-                ((l) => SelectNot(l)));
-            g.SelectRangeCharRule.Action = ((Expression<Func<NFAFragment<char>, NFAFragment<char>, NFAFragment<char>>>)
-                ((a, b) => Range(a, b)));
-            g.ZeroOrMoreRule.Action = ((Expression<Func<NFAFragment<char>, NFAFragment<char>>>)
-                ((x) => ZeroOrMore(x)));
-            g.ZeroOrOneRule.Action = ((Expression<Func<NFAFragment<char>, NFAFragment<char>>>)
-                ((x => ZeroOrOne(x))));
+            g.AlternateRule.Action = 
+                ((a, b) => Alternate(a, b));
+            g.ConcatRule.Action = 
+                ((a, b) => Concat(a, b));
+            g.OneOrMoreRule.Action = 
+                ((a) => OneOrMore(a));
+            g.SelectCharListSingleonRule.Action = 
+                ((a) => new List<NFAFragment<char>> { a });
+            g.SelectCharListAppendRule.Action = 
+                ((a, b) => AppendToList(a, b));
+            g.SelectCharRule.Action = 
+                ((l) => Select(l));
+            g.SelectNotCharRule.Action = 
+                ((l) => SelectNot(l));
+            g.SelectRangeCharRule.Action = 
+                ((a, b) => Range(a, b));
+            g.ZeroOrMoreRule.Action = 
+                ((x) => ZeroOrMore(x));
+            g.ZeroOrOneRule.Action = 
+                ((x => ZeroOrOne(x)));
 
             return g;
         }
@@ -265,7 +267,7 @@ namespace Framework.Parsing
                 .NonTerminalIs(ps => ps.CurrentNonTerminal)
                 .TerminalValueExprIs<NFAFragment<char>>(ps => ps.CurrentTerminalValue)
                 .NonTerminalValueExprIs<NFAFragment<char>>(ps => ps.CurrentNonTerminalValue)
-                .NonTerminalValueExprIs<List<NFAFragment<char>>>(ps => ps.CurrentNonTerminalListValue)
+                .NonTerminalValueExprIs<IList<NFAFragment<char>>>(ps => ps.CurrentNonTerminalListValue)
                 .NonTerminalValueExprIs<FiniteAutomatonState<char>>(ps => ps.CurrentRegexBeginState)
                 .IncludeSymbols(true)
                 .Generate("ParseExpr", parseTable, classifier);
