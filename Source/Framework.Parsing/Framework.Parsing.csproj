@@ -49,6 +49,7 @@
     <Compile Include="EmptySet.cs" />
     <Compile Include="Eof.cs" />
     <Compile Include="Epsilon.cs" />
+    <Compile Include="ExpressionEqualityComparer.cs" />
     <Compile Include="FiniteAutomatonState.cs" />
     <Compile Include="FiniteAutomatonStateTransition.cs" />
     <Compile Include="Grammar.cs" />

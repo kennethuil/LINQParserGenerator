@@ -5,7 +5,7 @@ using System.Text;
 
 namespace Framework.Parsing
 {
-    public class Canonicalizer<T> : IEnumerable<T>
+    public class Canonicalizer<T> : IEnumerable<T> where T : class
     {
         Dictionary<T, T> _table;
 
@@ -37,6 +37,8 @@ namespace Framework.Parsing
         /// <returns></returns>
         public T GetInstance(T proposed)
         {
+            if (proposed == null)
+                return null;
             T result;
             if (_table.TryGetValue(proposed, out result))
                 return result;

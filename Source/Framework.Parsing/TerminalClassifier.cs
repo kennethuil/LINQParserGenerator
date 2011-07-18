@@ -11,6 +11,9 @@ namespace Framework.Parsing
 {
     public class TerminalClassifier<TChar> where TChar : IComparable<TChar>, IEquatable<TChar>
     {
+        Canonicalizer<Expression<Func<TChar, bool>>> _canonicalizer = new Canonicalizer<Expression<Func<TChar, bool>>>
+            (new ExpressionEqualityComparer<Expression<Func<TChar, bool>>>());
+
         // For each entry, if entry.Key is true, everything in entry.Value might be true.  Also, everything in entry.Value might be false.
         IDictionary<Expression<Func<TChar, bool>>, ISet<Expression<Func<TChar, bool>>>> _overlaps = new Dictionary<Expression<Func<TChar, bool>>, ISet<Expression<Func<TChar, bool>>>>();
 
@@ -39,13 +42,14 @@ namespace Framework.Parsing
         
         public void AddImplies(Expression<Func<TChar, bool>> a, Expression<Func<TChar, bool>> b)
         {
-            AddRelationship(_implies, a, b);
-            AddOverlaps(b, a);
+            AddRelationship(_implies, _canonicalizer.GetInstance(a), 
+                _canonicalizer.GetInstance(b));
+            AddOverlaps(_canonicalizer.GetInstance(b), _canonicalizer.GetInstance(a));
         }
 
         public void AddOverlaps(Expression<Func<TChar, bool>> a, Expression<Func<TChar, bool>> b)
         {
-            AddRelationship(_overlaps, a, b);
+            AddRelationship(_overlaps, _canonicalizer.GetInstance(a), _canonicalizer.GetInstance(b));
         }
 
         // A set of states that will be turned into a single DFA state.
@@ -204,14 +208,14 @@ namespace Framework.Parsing
                 foreach (var transition in EmptyIfNull(state.Transitions))
                 {
                     if (transition.CharacterMatchExpression != null)
-                        allMatchTests.Add(transition.CharacterMatchExpression);
+                        allMatchTests.Add(_canonicalizer.GetInstance(transition.CharacterMatchExpression));
                 }
             }
             foreach (var state in set.States)
             {
                 foreach (var transition in EmptyIfNull(state.Transitions))
                 {
-                    var matchExpression = transition.CharacterMatchExpression;
+                    var matchExpression = _canonicalizer.GetInstance(transition.CharacterMatchExpression);
                     ISet<Expression<Func<TChar, bool>>> overlaps;
                     if (matchExpression != null && _overlaps.TryGetValue(matchExpression, out overlaps))
                     {
@@ -281,6 +285,7 @@ namespace Framework.Parsing
 
         private void AddCharacterMove(StateSet set, FiniteAutomatonStateTransition<TChar> transition, Expression<Func<TChar, bool>> matchExpression, Dictionary<Expression<Func<TChar, bool>>, StateSet> charMovesBuild)
         {
+            matchExpression = _canonicalizer.GetInstance(matchExpression);
             StateSet targetSet;
             if (!charMovesBuild.TryGetValue(matchExpression, out targetSet))
             {
