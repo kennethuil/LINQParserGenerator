@@ -113,26 +113,22 @@ namespace Framework.Parsing
         public GrammarRule<IList<TValue>,TValue, IList<TValue>> SelectCharListAppendRule { get; private set; }
         public GrammarRule<TValue, IList<TValue>> SelectCharListSingleonRule { get; private set; }
 
+        static Terminal<char> MatchLiteral(string terminalName, string str)
+        {
+            return new Terminal<char>
+            {
+                InitialState = TerminalClassifier<char>.GetLiteralSequenceMatcher(str),
+                Name = terminalName
+            };
+        }
 
         static Terminal<char, TValue> MatchCapturingCharSequence(string terminalName, 
             params Expression<Func<char, bool>>[] charMatches)
         {
-            FiniteAutomatonState<char>[] states = GetCharSequenceStates(charMatches);
+            //FiniteAutomatonState<char>[] states = GetCharSequenceStates(charMatches);
             var term = new Terminal<char, TValue>
             {
-                InitialState = states[0],
-                Name = terminalName
-            };
-            return term;
-        }
-
-        static Terminal<char> MatchCharSequence(string terminalName,
-            params Expression<Func<char, bool>>[] charMatches)
-        {
-            FiniteAutomatonState<char>[] states = GetCharSequenceStates(charMatches);
-            var term = new Terminal<char>
-            {
-                InitialState = states[0],
+                InitialState = TerminalClassifier<char>.GetExpressionSequenceMatcher(charMatches),
                 Name = terminalName
             };
             return term;
@@ -171,19 +167,18 @@ namespace Framework.Parsing
             // TODO: Hex & Unicode escape
             OtherChar = MatchCapturingCharSequence("OtherChar", _matchNonControlChar);
 
-            var openNonCapturing = MatchCharSequence("OpenNonCapturing", _matchOpenParen, _matchQuestion, _matchColon);
-            var openParen = MatchCharSequence("OpenParen", _matchOpenParen);
-            var closeParen = MatchCharSequence("CloseParen", _matchCloseParen);
-            var openBracket = MatchCharSequence("OpenBracket", _matchOpenBracket);
-            var openBracketCaret = MatchCharSequence("OpenBracketCaret", _matchOpenBracket,
-                _matchCaret);
-            var closeBracket = MatchCharSequence("CloseBracket", _matchCloseBracket);
-            
-            var star = MatchCharSequence("Star", _matchStar);
-            var plus = MatchCharSequence("Plus", _matchPlus);
-            var question = MatchCharSequence("Question", _matchQuestion);
-            var dash = MatchCharSequence("Dash", _matchDash);
-            var pipe = MatchCharSequence("Pipe", _matchPipe);
+            var openNonCapturing = MatchLiteral("OpenNonCapturing", "(?:");
+            var openParen = MatchLiteral("OpenParen", "(");
+            var closeParen = MatchLiteral("CloseParen", ")");
+            var openBracket = MatchLiteral("OpenBracket", "[");
+            var openBracketCaret = MatchLiteral("OpenBracketCaret", "[^");
+            var closeBracket = MatchLiteral("CloseBracket", "]");
+
+            var star = MatchLiteral("Star", "*");
+            var plus = MatchLiteral("Plus", "+");
+            var question = MatchLiteral("Question", "?");
+            var dash = MatchLiteral("Dash", "-");
+            var pipe = MatchLiteral("Pipe", "|");
 
             // NonTerminals.
             SpecificChar = new NonTerminal<TValue> { Name = "SpecificChar" };
