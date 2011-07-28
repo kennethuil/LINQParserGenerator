@@ -43,37 +43,6 @@ namespace ParsingTests
             return term;
         }
 
-        public Terminal<char> GetLiteralMatcher(string literal)
-        {
-            Terminal<char> term = new Terminal<char>();
-            FiniteAutomatonState<char>[] states = new FiniteAutomatonState<char>[literal.Length + 1];
-
-            states[literal.Length] = new FiniteAutomatonState<char>
-            {
-                IsAccepting = true
-            };
-            int i;
-            for (i = literal.Length - 1; i >= 0; --i)
-            {
-                // TODO: stop creating duplicate expressions that run the same tests.
-                char ch = literal[i];
-                ParameterExpression px = Expression.Parameter(typeof(char), "litcheck" + ch);
-
-                states[i] = new FiniteAutomatonState<char>
-                {
-                    Transitions = new[] {
-                        new FiniteAutomatonStateTransition<char> {
-                            CharacterMatchExpression = Expression.Lambda<Func<char,bool>>(Expression.Equal(px, Expression.Constant(ch)), px),
-                            Target = states[i+1]
-                        }
-                    }
-                };
-            }
-            term.InitialState = states[0];
-            return term;
-             
-        }
-
         [TestFixtureSetUp]
         public void init()
         {
@@ -379,7 +348,7 @@ namespace ParsingTests
         [Test]
         public void TestRegexCompile2()
         {
-            var regexCompiler = GetRegexCompiler();
+            var regexCompiler = _regexCompiler;
             var classifier = GetClassifier();
 
             var t2 = new Terminal<char> { Name = "T2", InitialState = regexCompiler("a*b") };
@@ -395,7 +364,7 @@ namespace ParsingTests
         [Test]
         public void TestRegexCompile3()
         {
-            var regexCompiler = GetRegexCompiler();
+            var regexCompiler = _regexCompiler;
             var classifier = GetClassifier();
 
             var t3 = new Terminal<char> {Name = "T3", InitialState = regexCompiler(@"\d")};
@@ -409,7 +378,7 @@ namespace ParsingTests
         [Test]
         public void TestRegexCompile4()
         {
-            var regexCompiler = GetRegexCompiler();
+            var regexCompiler = _regexCompiler;
             var classifier = GetClassifier();
 
             var t4 = new Terminal<char> { Name = "T4", InitialState = regexCompiler(@"\d+\.") };
@@ -424,7 +393,7 @@ namespace ParsingTests
         [Test]
         public void TestRegexCompile5()
         {
-            var regexCompiler = GetRegexCompiler();
+            var regexCompiler = _regexCompiler;
             var classifier = GetClassifier();
 
             var t5 = new Terminal<char> { Name = "T5", InitialState = regexCompiler(@"\d+(\.\d+)") };
@@ -437,7 +406,7 @@ namespace ParsingTests
         [Test]
         public void TestRegexCompile6()
         {
-            var regexCompiler = GetRegexCompiler();
+            var regexCompiler = _regexCompiler;
             var classifier = GetClassifier();
 
             var t = new Terminal<char> { Name = "T6", InitialState = regexCompiler(@"ab?") };
@@ -451,7 +420,7 @@ namespace ParsingTests
         [Test]
         public void TestRegexCompile7()
         {
-            var regexCompiler = GetRegexCompiler();
+            var regexCompiler = _regexCompiler;
             var classifier = GetClassifier();
 
             var t6 = new Terminal<char> { Name = "T7", InitialState = regexCompiler(@"\d+(\.\d+)?") };
