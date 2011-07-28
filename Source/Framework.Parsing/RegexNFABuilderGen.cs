@@ -364,7 +364,7 @@ namespace Framework.Parsing
                                        Target = item.Begin
                                    }).Concat(new[] {
                                        new FiniteAutomatonStateTransition<TChar> {
-                                           MatchEpsilon = true,
+                                           CharacterMatchExpression = (x=>true),
                                            Target = newEnd
                                        }
                                    })

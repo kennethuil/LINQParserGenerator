@@ -29,6 +29,7 @@ namespace ParsingTests
         TerminalClassifier<char> _classifierGen;
         IExpressionHelper _expressionHelper;
         Func<string, FiniteAutomatonState<char>> _regexCompiler;
+        RegexCharNFABuilder _regexNFABuilder;
 
         Terminal<char> GetNumberTerminal<T>(Expression<Func<string,T>> action)
         {
@@ -42,8 +43,8 @@ namespace ParsingTests
         {
             _expressionHelper = new ExpressionHelper();
 
-            var builder = new RegexCharNFABuilder(_expressionHelper);
-            var expr = builder.CreateRegexParser("TestRegexCompile");
+            _regexNFABuilder = new RegexCharNFABuilder(_expressionHelper);
+            var expr = _regexNFABuilder.CreateRegexParser("TestRegexCompile");
             _regexCompiler = expr.Compile();
 
             _classifierGen = new TerminalClassifier<char>(_expressionHelper);
@@ -422,6 +423,25 @@ namespace ParsingTests
                 .Compile();
             Assert.IsTrue(f(new TestStringInput("143.5")));
             Assert.IsTrue(f(new TestStringInput("143")));
+        }
+
+        [Test]
+        public void TestRegexCompile8()
+        {
+            var regexCompiler = _regexCompiler;
+            var classifier = GetClassifier();
+
+            var t8 = new Terminal<char> { Name = "T8", InitialState = regexCompiler(@"[^x]yz") };
+
+            // TODO: There's got to be a better way to package this up.
+            _regexNFABuilder.SetupImplies(classifier.Parent);
+
+
+            var f = classifier.Generate(new Dictionary<Terminal<char>, Expression<Func<TestStringInput, bool>>> { { t8, x => true } })
+                .Compile();
+            Assert.IsTrue(f(new TestStringInput("yyz")));
+            Assert.IsFalse(f(new TestStringInput("xyz")));
+            Assert.IsFalse(f(new TestStringInput("yab")));
         }
 
         private Func<string, FiniteAutomatonState<char>> GetRegexCompiler()

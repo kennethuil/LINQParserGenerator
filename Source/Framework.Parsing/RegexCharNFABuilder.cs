@@ -83,7 +83,7 @@ namespace Framework.Parsing
                 {
                     classifier.AddImplies(entry.Value, _notWhitespace);
                 }
-
+                classifier.AddImplies(entry.Value, _any);
             }
         }
 

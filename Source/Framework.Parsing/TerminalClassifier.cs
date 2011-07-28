@@ -330,6 +330,8 @@ namespace Framework.Parsing
             {
                 state.AcceptTerminals = new[] { terminal };
             }
+            if (state.IsRejecting && (state.RejectTerminals == null || state.RejectTerminals.Count() == 0))
+                state.RejectTerminals = new[] { terminal };
 
             foreach (var transition in EmptyIfNull(state.Transitions))
             {

@@ -34,6 +34,15 @@ namespace Framework.Parsing
             _skipTerminals = new HashSet<Terminal<TChar>>();
         }
 
+        public TerminalClassifier<TChar> Parent
+        {
+            get
+            {
+                return _parserGenerator;
+            }
+        }
+
+
         public Type StateType
         {
             get
