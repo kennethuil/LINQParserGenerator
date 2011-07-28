@@ -118,7 +118,6 @@ namespace Source.UnitTests.Framework.Parsing.Tests
             _parserGenerator = new TerminalClassifier<char>(_expressionHelper);
 
             // NOTE: The generator doesn't automatically follow multiple implications yet.
-            /*
             _parserGenerator.AddImplies(matchLetter, matchLetterOrDigit);
             _parserGenerator.AddImplies(matchw, matchLetter);
             _parserGenerator.AddImplies(matchh, matchLetter);
@@ -132,7 +131,6 @@ namespace Source.UnitTests.Framework.Parsing.Tests
             _parserGenerator.AddImplies(matchl, matchLetterOrDigit);
             _parserGenerator.AddImplies(matche, matchLetterOrDigit);
             _parserGenerator.AddImplies(matchf, matchLetterOrDigit);
-            */
             // Simple XML tags (no attributes)
             _openTag = new Terminal<char>
             {
