@@ -57,6 +57,7 @@
     <Compile Include="GrammarSymbol.cs" />
     <Compile Include="HashableSet.cs" />
     <Compile Include="LR1Item.cs" />
+    <Compile Include="LR1ItemSetCollection.cs" />
     <Compile Include="LRParseAction.cs" />
     <Compile Include="LRParseState.cs" />
     <Compile Include="LRParseTable.cs" />

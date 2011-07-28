@@ -157,77 +157,31 @@ namespace Framework.Parsing
         public LRParseTable<TChar> BuildParseTable<TChar>(Grammar<TChar> grammar)
             where TChar: IComparable<TChar>, IEquatable<TChar>
         {
-            LRParseTable<TChar> t = new LRParseTable<TChar> { Rules = grammar.Rules.ToList(), States = new List<LRParseState<TChar>>() };
-
-            var firstSets = GetFirstSets(grammar);
+            var gotoMap = new Dictionary<ISet<LR1Item<TChar>>, IDictionary<GrammarSymbol, ISet<LR1Item<TChar>>>>();
 
             // Build the canonical set of LR1 Item sets.
 
             // Start with an item and an item set for the initial rule.
-            var startItem = new LR1Item<TChar> { Rule = grammar.StartRule, Lookahead = Eof<TChar>.Instance, DotPosition = 0 };
-            var startClosure = Closure(grammar, firstSets, new HashSet<LR1Item<TChar>> { startItem });
-            //var C = new HashSet<ISet<LR1Item<TChar>>>(new [] {startClosure},
-            //    new SetComparer<LR1Item<TChar>>());
+            Canonicalizer<ISet<LR1Item<TChar>>> C = GetCanonicalLR1Sets(grammar, gotoMap);
 
-            var gotoMap = new Dictionary<ISet<LR1Item<TChar>>, IDictionary<GrammarSymbol, ISet<LR1Item<TChar>>>>();
+            LRParseTable<TChar> t = CreateParseTable(grammar, gotoMap, C);
 
-            var C = new Canonicalizer<ISet<LR1Item<TChar>>>(new[] { startClosure },
-                new SetComparer<LR1Item<TChar>>());
-            IEnumerable<ISet<LR1Item<TChar>>> newItems = C.ToArray();
-            // Now add to it until nothing more can be added
-            // We'll also build a "goto map" so we don't have to regenerate GOTO sets below.
-            bool added;
-            do
-            {
-                added = false;
-                var addedItems = new List<ISet<LR1Item<TChar>>>();
+            return t;
+        }
 
-                foreach (var I in newItems)
-                {
-                    foreach (var X in grammar.Symbols)
-                    {
-                        var gotoSet = Goto(grammar, firstSets, I, X);
-                        if (gotoSet == null || gotoSet.Count == 0)
-                            continue;
-
-                        var canonical = C.GetInstance(gotoSet);
-                        if (Object.ReferenceEquals(gotoSet, canonical))
-                        {
-                            added = true;
-                            addedItems.Add(gotoSet);
-
-                        }
-                        IDictionary<GrammarSymbol, ISet<LR1Item<TChar>>> symbolGotoMap;
-                        if (!gotoMap.TryGetValue(I, out symbolGotoMap))
-                        {
-                            symbolGotoMap = new Dictionary<GrammarSymbol, ISet<LR1Item<TChar>>>();
-                            gotoMap.Add(I, symbolGotoMap);
-                        }
-                        symbolGotoMap[X] = canonical;
-                    }
-                }
-                newItems = addedItems;
-                
-            } while (added);
-            
-            // Now the canonical set of LR1 Item sets is complete.  Use it to build the parse table.
-
-            // TODO: Dependency-inject and use integrated logging.
-            foreach (var I in C)
-            {
-                DumpItemSet(I);
-            }
-
+        public LRParseTable<TChar> CreateParseTable<TChar>(Grammar<TChar> grammar, Dictionary<ISet<LR1Item<TChar>>, IDictionary<GrammarSymbol, ISet<LR1Item<TChar>>>> gotoMap, Canonicalizer<ISet<LR1Item<TChar>>> C)
+            where TChar : IComparable<TChar>, IEquatable<TChar>
+        {
             var stateMap = new Dictionary<ISet<LR1Item<TChar>>, LRParseState<TChar>>();
-
+            LRParseTable<TChar> t = new LRParseTable<TChar> { Rules = grammar.Rules.ToList(), States = new List<LRParseState<TChar>>() };
             foreach (var I in C)
             {
                 // Map states to item sets and add reduction actions.
                 var state = new LRParseState<TChar>
-                {
-                    Actions = new Dictionary<Terminal<TChar>, ICollection<LRParseAction<TChar>>>(),
-                    Goto = new Dictionary<NonTerminal, LRParseState<TChar>>()
-                };
+                                {
+                                    Actions = new Dictionary<Terminal<TChar>, ICollection<LRParseAction<TChar>>>(),
+                                    Goto = new Dictionary<NonTerminal, LRParseState<TChar>>()
+                                };
                 stateMap[I] = state;
                 t.States.Add(state);
 
@@ -281,8 +235,63 @@ namespace Framework.Parsing
                     }
                 }
             }
-
             return t;
+        }
+
+        public Canonicalizer<ISet<LR1Item<TChar>>> GetCanonicalLR1Sets<TChar>(Grammar<TChar> grammar, Dictionary<ISet<LR1Item<TChar>>, IDictionary<GrammarSymbol, ISet<LR1Item<TChar>>>> gotoMap)
+                        where TChar : IComparable<TChar>, IEquatable<TChar>
+        {
+            var firstSets = GetFirstSets(grammar);
+            var startItem = new LR1Item<TChar> { Rule = grammar.StartRule, Lookahead = Eof<TChar>.Instance, DotPosition = 0 };
+            var startClosure = Closure(grammar, firstSets, new HashSet<LR1Item<TChar>> { startItem });
+
+            var C = new Canonicalizer<ISet<LR1Item<TChar>>>(new[] { startClosure },
+                                                            new SetComparer<LR1Item<TChar>>());
+            IEnumerable<ISet<LR1Item<TChar>>> newItems = C.ToArray();
+            // Now add to it until nothing more can be added
+            // We'll also build a "goto map" so we don't have to regenerate GOTO sets below.
+            bool added;
+            do
+            {
+                added = false;
+                var addedItems = new List<ISet<LR1Item<TChar>>>();
+
+                foreach (var I in newItems)
+                {
+                    foreach (var X in grammar.Symbols)
+                    {
+                        var gotoSet = Goto(grammar, firstSets, I, X);
+                        if (gotoSet == null || gotoSet.Count == 0)
+                            continue;
+
+                        var canonical = C.GetInstance(gotoSet);
+                        if (Object.ReferenceEquals(gotoSet, canonical))
+                        {
+                            added = true;
+                            addedItems.Add(gotoSet);
+
+                        }
+                        IDictionary<GrammarSymbol, ISet<LR1Item<TChar>>> symbolGotoMap;
+                        if (!gotoMap.TryGetValue(I, out symbolGotoMap))
+                        {
+                            symbolGotoMap = new Dictionary<GrammarSymbol, ISet<LR1Item<TChar>>>();
+                            gotoMap.Add(I, symbolGotoMap);
+                        }
+                        symbolGotoMap[X] = canonical;
+                    }
+                }
+                newItems = addedItems;
+                
+            } while (added);
+            
+            // Now the canonical set of LR1 Item sets is complete.  Use it to build the parse table.
+
+            // TODO: Dependency-inject and use integrated logging.
+            foreach (var I in C)
+            {
+                DumpItemSet(I);
+            }
+            return C;
         }
     }
 }
