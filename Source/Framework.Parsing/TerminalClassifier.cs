@@ -361,30 +361,6 @@ namespace Framework.Parsing
             return newStartState;
         }
 
-        public static FiniteAutomatonState<TChar> GetLiteralSequenceMatcher(IEnumerable<TChar> seq)
-        {
-            if (seq.Any())
-            {
-                var first = seq.First();
-                var rest = seq.Skip(1);
-                var p = Expression.Parameter(typeof(TChar), "x");
-                return new FiniteAutomatonState<TChar>
-                {
-                    Transitions = new[] {
-                        new FiniteAutomatonStateTransition<TChar> {
-                            CharacterMatchExpression = Expression.Lambda<Func<TChar,bool>>(
-                                Expression.Equal(p, Expression.Constant(first)), true, new[] {p}),
-                            Target = GetLiteralSequenceMatcher(rest)
-                        }
-                    }
-                };
-            }
-            return new FiniteAutomatonState<TChar>
-            {
-                IsAccepting = true
-            };
-        }
-
         public static FiniteAutomatonState<TChar> GetExpressionSequenceMatcher(IEnumerable<Expression<Func<TChar, bool>>> seq)
         {
             if (seq.Any())

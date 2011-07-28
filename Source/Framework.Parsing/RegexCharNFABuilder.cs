@@ -87,7 +87,32 @@ namespace Framework.Parsing
             }
         }
 
-        public static Expression<Func<char,bool>> SpecificCharMatchExpr(char ch)
+        public static FiniteAutomatonState<char> GetLiteralMatcher(string literal)
+        {
+            int i;
+            var current = new FiniteAutomatonState<char>
+            {
+                IsAccepting = true
+            };
+            for (i = literal.Length - 1; i >= 0; --i)
+            {
+                ParameterExpression x = Expression.Parameter(typeof(char), "x");
+
+                current = new FiniteAutomatonState<char>
+                {
+                    Transitions = new[] {
+                        new FiniteAutomatonStateTransition<char> {
+                            CharacterMatchExpression = SpecificCharMatchExpr(literal[i]),
+                            Target = current
+                        }
+                    }
+                };
+            }
+
+            return current;
+        }
+
+        public static Expression<Func<char, bool>> SpecificCharMatchExpr(char ch)
         {
             Expression<Func<char, bool>> expr;
             if (_specificCharExpr.TryGetValue(ch, out expr))
@@ -203,22 +228,7 @@ namespace Framework.Parsing
         {
             RegexGrammar<NFAFragment<char>> g = new RegexGrammar<NFAFragment<char>>();
             // Value types for symbols.
-            /*
-            g.CharClassEscape.ValueType = typeof(NFAFragment<char>);
-            g.CharList.ValueType = typeof(List<NFAFragment<char>>);
-            g.ConcatExpr.ValueType = typeof(NFAFragment<char>);
-            g.Expr.ValueType = typeof(NFAFragment<char>);
-            g.OtherChar.ValueType = typeof(NFAFragment<char>);
-            g.QuantExpr.ValueType = typeof(NFAFragment<char>);
-            g.SelectChar.ValueType = typeof(NFAFragment<char>);
-            g.SelectNotChar.ValueType = typeof(NFAFragment<char>);
-            g.SelectRangeChar.ValueType = typeof(NFAFragment<char>);
-            g.SimpleChar.ValueType = typeof(NFAFragment<char>);
-            g.SingleChar.ValueType = typeof(NFAFragment<char>);
-            g.SingleCharEscape.ValueType = typeof(NFAFragment<char>);
-            g.SpecificChar.ValueType = typeof(NFAFragment<char>);
-            g.SubExpr.ValueType = typeof(NFAFragment<char>);
-             */
+
 
             g.OtherChar.StringAction = ((s) => OtherChar(s));
             g.SingleCharEscape.StringAction = ((s) => SingleCharEscape(s));
@@ -247,6 +257,8 @@ namespace Framework.Parsing
 
             return g;
         }
+
+
 
         public Expression<Func<string, FiniteAutomatonState<char>>> CreateRegexParser(string prefix)
         {

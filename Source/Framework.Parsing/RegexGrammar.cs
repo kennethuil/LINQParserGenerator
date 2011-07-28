@@ -117,7 +117,7 @@ namespace Framework.Parsing
         {
             return new Terminal<char>
             {
-                InitialState = TerminalClassifier<char>.GetLiteralSequenceMatcher(str),
+                InitialState = RegexCharNFABuilder.GetLiteralMatcher(str),
                 Name = terminalName
             };
         }
