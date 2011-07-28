@@ -17,9 +17,6 @@ namespace ParsingTests
     [TestFixture]
     public class LR1ParseTableTests
     {
-        Expression<Func<char, bool>> _matchDigit = (digit) => char.IsDigit(digit);
-        Expression<Func<char, bool>> _matchPeriod = (period) => period == '.';
-
         Terminal<char> _add;
         Terminal<char> _sub;
         Terminal<char> _mul;
@@ -28,9 +25,6 @@ namespace ParsingTests
         Terminal<char> _openParen;
         Terminal<char> _closeParen;
         Terminal<char> _whitespace;
-
-        FiniteAutomatonState<char> _numberStart;
-        FiniteAutomatonState<char> _variableStart;
 
         TerminalClassifier<char> _classifierGen;
         IExpressionHelper _expressionHelper;
