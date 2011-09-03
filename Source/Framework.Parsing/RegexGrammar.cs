@@ -31,10 +31,8 @@ namespace Framework.Parsing
 
         private static readonly ISet<char> _matchBackslash =
             new HashSet<char> { '\\' };
-        //private static readonly ISet<char> _matchSingleCharEscapeChar =
-            //(c) => !(c == 'w' ||
-            //                c == 's' || c == 'S' || c == 'd' || c == 'D');
-        //    new HashSet<char>(AllCharacters().Except(new HashSet<char> { 'w', 's', 'S', 'd', 'D' }));
+        private static readonly ISet<char> _dontMatchSingleCharEscapeChar =
+            new HashSet<char> { 'w', 's', 'S', 'd', 'D' };
 
         private static readonly ISet<char> _matchCharClassEscapeChar =
             new HashSet<char> {'w', 's', 'S', 'd', 'D'};
@@ -74,8 +72,9 @@ namespace Framework.Parsing
             new HashSet<char> { '|'};
         //private static readonly ISet<char> _matchAny =
         //    AllCharacters();
-        //private static readonly ISet<char> _matchNonControlChar =
-        //    AllCharactersExcept('\"', '\\', '[', ']', '(', ')', '?', '+', '*', '-', '^', '|', '-');
+        private static readonly ISet<char> _dontMatchNonControlChar =
+            new HashSet<char> { '\"', '\\', '[', ']', '(', ')', '?', '+', '*', '-', '^', '|', '-' };
+
             //(c) => c != '\"' && c != '\\' && c != '[' && c != ']' && c != '(' && c != ')' && c != '?' && c != '+' && c != '*' && c != '-' && c != '^' && c != '|'
             //&& c != '-';
 
@@ -161,11 +160,57 @@ namespace Framework.Parsing
 
         public RegexGrammar()
         {
-            // TODO: Put these escapes back when we fix the large set problem.
-            //SingleCharEscape = MatchCapturingCharSequence("SingleCharEscape", _matchBackslash, _matchSingleCharEscapeChar);
+            var accept = new FiniteAutomatonState<char>
+            {
+                IsAccepting = true
+            };
+            var escapeChar = new FiniteAutomatonState<char>
+            {
+                Transitions = new[] {
+                    new FiniteAutomatonStateTransition<char> {
+                        Characters = _dontMatchSingleCharEscapeChar,
+                        MatchAllExcept = true,
+                        Target = accept
+                    }
+                }
+            };
+            var backslash = new FiniteAutomatonState<char>
+            {
+                Transitions = new[] {
+                    new FiniteAutomatonStateTransition<char> {
+                        Characters = _matchBackslash,
+                        Target = escapeChar
+                    }
+                }
+            };
+            SingleCharEscape = new Terminal<char,TValue>
+            {
+                InitialState = backslash,
+                Name = "SingleCharEscape"
+            };
+
             CharClassEscape = MatchCapturingCharSequence("CharClassEscape", _matchBackslash, _matchCharClassEscapeChar);
             // TODO: Hex & Unicode escape
             //OtherChar = MatchCapturingCharSequence("OtherChar", _matchNonControlChar);
+            accept = new FiniteAutomatonState<char>
+            {
+                IsAccepting = true
+            };
+            var otherChar = new FiniteAutomatonState<char>
+            {
+                Transitions = new[] {
+                    new FiniteAutomatonStateTransition<char> {
+                        Characters = _dontMatchNonControlChar,
+                        MatchAllExcept = true,
+                        Target = accept
+                    }
+                }
+            };
+            OtherChar = new Terminal<char, TValue>
+            {
+                InitialState = otherChar,
+                Name = "OtherChar"
+            };
 
             var openNonCapturing = MatchLiteral("OpenNonCapturing", "(?:");
             var openParen = MatchLiteral("OpenParen", "(");

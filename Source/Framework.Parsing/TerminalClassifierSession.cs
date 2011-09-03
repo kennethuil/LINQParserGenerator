@@ -214,32 +214,47 @@ namespace Framework.Parsing
             var expCh = Expression.Parameter(typeof(TChar), "current");
             jumps.Add(Expression.Assign(expCh, Expression.Invoke(_currentChar, parseState)));
             var cases = new List<SwitchCase>();
-            foreach (var transition in state.Transitions)
+            var positiveChars = new HashSet<TChar>();
+
+            var inclusiveTransitions = from x in state.Transitions where !x.MatchAllExcept select x;
+
+            foreach (var transition in inclusiveTransitions)
             {
-                bool willBeCapturing = IsCapturing(transition.Target);
-
-                var moveNextChar = new Expression[] { Expression.Invoke(_moveNextChar, parseState) };
-                var jump = new Expression[] { Expression.Goto(GetStateTarget(transition.Target, stateTargets)) };
-
-                var all =
-                    ((isCapturing && !willBeCapturing) ? new Expression[] { Expression.Invoke(_unmarkPosition, parseState) } : new Expression[0]).Concat(
-                    (transition.MatchEof ? new Expression[0] : moveNextChar)).Concat(
-                    jump);
+                IEnumerable<Expression> all = GetTransitionExpression(stateTargets, parseState, transition, isCapturing);
 
                 // On a character transition, consume the character and jump to the next state.
                 if (!transition.MatchEof)
+                {
                     cases.Add(Expression.SwitchCase(Expression.Block(all), from x in transition.Characters select Expression.Constant(x)));
-                //jumps.Add(Expression.IfThen(Expression.Invoke(transition.CharacterMatchExpression, expCh),
-                //    Expression.Block(all)));
+                    positiveChars.UnionWith(transition.Characters);
+                }
                 else
                     onEof = Expression.Block(all);
-                    // EOF transition: can't consume a character, jump to the indicated state.
-                    //onEof = Expression.Block(all);
             }
+
+            var exclusiveTransitions = from x in state.Transitions where x.MatchAllExcept select x;
+            if (exclusiveTransitions.Count() > 1)
+            {
+                throw new ApplicationException("Not supporting states with more than one outgoing transition having MatchAllExcept set to true");
+            }
+            var exclusiveTransition = exclusiveTransitions.FirstOrDefault();
+            var defaultTransition = noTransition;
+            
+            if (exclusiveTransition != null)
+            {
+                IEnumerable<Expression> all = GetTransitionExpression(stateTargets, parseState, exclusiveTransition, isCapturing);
+                var excludeChars = exclusiveTransition.Characters.Except(positiveChars);
+                if (excludeChars.Count() > 0)
+                {
+                    cases.Add(Expression.SwitchCase(noTransition, from x in exclusiveTransition.Characters select Expression.Constant(x)));
+                }
+                defaultTransition = Expression.Block(all);
+            }
+
             if (cases.Count > 0)
-                jumps.Add(Expression.Switch(expCh, noTransition, cases.ToArray()));
+                jumps.Add(Expression.Switch(expCh, defaultTransition, cases.ToArray()));
             else
-                jumps.Add(noTransition);
+                jumps.Add(defaultTransition);
             
             var jumpBlock = Expression.Block(new ParameterExpression[] { expCh }, jumps);
 
@@ -270,6 +285,18 @@ namespace Framework.Parsing
                 AddBlock(parseState, handlers,
                     stateTargets, stateBlocks, transition.Target, returnLabel, beginLabel);
             }
+        }
+
+        private IEnumerable<Expression> GetTransitionExpression(Dictionary<FiniteAutomatonState<TChar>, LabelTarget> stateTargets, ParameterExpression parseState, FiniteAutomatonStateTransition<TChar> transition, bool isCapturing)
+        {
+            bool willBeCapturing = IsCapturing(transition.Target);
+
+            var moveNextChar = new Expression[] { Expression.Invoke(_moveNextChar, parseState) };
+            var jump = new Expression[] { Expression.Goto(GetStateTarget(transition.Target, stateTargets)) };
+
+            return ((isCapturing && !willBeCapturing) ? new Expression[] { Expression.Invoke(_unmarkPosition, parseState) } : new Expression[0]).Concat(
+                (transition.MatchEof ? new Expression[0] : moveNextChar)).Concat(
+                    jump);
         }
 
         private Expression GetAccept(Terminal<TChar> accepting, LabelTarget returnLabel, LabelTarget beginLabel, ParameterExpression parseState,

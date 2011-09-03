@@ -267,7 +267,7 @@ namespace Framework.Parsing
                         // The exceptTarget is the set of all states pointed to by an except transition.
                         // The resulting DFA will have one except transition pointing to it, indicating that all
                         // characters not mentioned in any transition will match.
-                        MergeInState(state, exceptTarget);
+                        MergeInState(transition.Target, exceptTarget);
                     }
                 }
             }
