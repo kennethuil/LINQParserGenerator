@@ -7,56 +7,77 @@ using System.Text;
 
 namespace Framework.Parsing
 {
+    /*
     public class RegexGrammar<TValue> : Grammar<char>
     {
-        private static readonly Expression<Func<char, bool>> _matchBackslash =
-            (c) => c == '\\';
-        private static readonly Expression<Func<char, bool>> _matchSingleCharEscapeChar =
-            (c) => !(c == 'w' ||
-                            c == 's' || c == 'S' || c == 'd' || c == 'D');
-        private static readonly Expression<Func<char,bool>> _matchCharClassEscapeChar =
-            (c) => c == 'w' ||
-                            c == 's' || c == 'S' || c == 'd' || c == 'D';
-        private static readonly Expression<Func<char, bool>> _matchDigit =
-            (c) => char.IsDigit(c);
-        private static readonly Expression<Func<char, bool>> _matchHex =
-            (c) => char.IsDigit(c) || c == 'a' || c == 'A' || c == 'b' || c == 'B' || c == 'c' ||
-                c == 'C' || c == 'd' || c == 'D' || c == 'e' || c == 'E' || c == 'f' || c == 'F';
-        private static readonly Expression<Func<char, bool>> _matchOpenBracket =
-            (c) => c == '[';
-        private static readonly Expression<Func<char, bool>> _matchCloseBracket =
-            (c) => c == ']';
-        private static readonly Expression<Func<char, bool>> _matchOpenBrace =
-            (c) => c == '{';
-        private static readonly Expression<Func<char, bool>> _matchCloseBrace =
-            (c) => c == '}';
-        private static readonly Expression<Func<char, bool>> _matchOpenParen =
-            (c) => c == '(';
-        private static readonly Expression<Func<char, bool>> _matchCloseParen =
-            (c) => c == ')';
-        private static readonly Expression<Func<char, bool>> _matchCaret =
-            (c) => c == '^';
-        private static readonly Expression<Func<char, bool>> _matchDash =
-            (c) => c == '-';
-        private static readonly Expression<Func<char, bool>> _matchDollar =
-            (c) => c == '$';
-        private static readonly Expression<Func<char, bool>> _matchQuestion =
-            (c) => c == '?';
-        private static readonly Expression<Func<char, bool>> _matchDot =
-            (c) => c == '.';
-        private static readonly Expression<Func<char, bool>> _matchColon =
-            (c) => c == ':';
-        private static readonly Expression<Func<char, bool>> _matchPlus =
-            (c) => c == '+';
-        private static readonly Expression<Func<char, bool>> _matchStar =
-            (c) => c == '*';
-        private static readonly Expression<Func<char,bool>> _matchPipe =
-            (c)=>c == '|';
-        private static readonly Expression<Func<char, bool>> _matchAny =
-            (c) => true;
-        private static readonly Expression<Func<char, bool>> _matchNonControlChar =
-            (c) => c != '\"' && c != '\\' && c != '[' && c != ']' && c != '(' && c != ')' && c != '?' && c != '+' && c != '*' && c != '-' && c != '^' && c != '|'
-            && c != '-';
+        private static HashSet<char> AllCharacters()
+        {
+            char ch = '\x0000';
+            HashSet<char> result = new HashSet<char>();
+            do
+            {
+                result.Add(ch);
+                ++ch;
+            } while (ch != '\x0000');
+            return result;
+        }
+
+        private static ISet<char> AllCharactersExcept(params char[] chars)
+        {
+            var result = AllCharacters();
+            result.ExceptWith(chars);
+            return result;
+        }
+
+        private static readonly ISet<char> _matchBackslash =
+            new HashSet<char> { '\\' };
+        private static readonly ISet<char> _matchSingleCharEscapeChar =
+            //(c) => !(c == 'w' ||
+            //                c == 's' || c == 'S' || c == 'd' || c == 'D');
+            new HashSet<char>(AllCharacters().Except(new HashSet<char> { 'w', 's', 'S', 'd', 'D' }));
+
+        private static readonly ISet<char> _matchCharClassEscapeChar =
+            new HashSet<char> {'w', 's', 'S', 'd', 'D'};
+        private static readonly ISet<char> _matchDigit =
+            new HashSet<char> { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' };
+        private static readonly ISet<char> _matchHex =
+            new HashSet<char> { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f', 'A', 'B', 'C', 'D', 'E', 'F' };
+        private static readonly ISet<char> _matchOpenBracket =
+            new HashSet<char> {'['};
+        private static readonly ISet<char> _matchCloseBracket =
+            new HashSet<char> { ']'};
+        private static readonly ISet<char> _matchOpenBrace =
+            new HashSet<char> {'{'};
+        private static readonly ISet<char> _matchCloseBrace =
+            new HashSet<char> { '}'};
+        private static readonly ISet<char> _matchOpenParen =
+            new HashSet<char> {'('};
+        private static readonly ISet<char> _matchCloseParen =
+            new HashSet<char> { ')'};
+        private static readonly ISet<char> _matchCaret =
+            new HashSet<char> { '^'};
+        private static readonly ISet<char> _matchDash =
+            new HashSet<char> { '-'};
+        private static readonly ISet<char> _matchDollar =
+            new HashSet<char> {'$'};
+        private static readonly ISet<char> _matchQuestion =
+            new HashSet<char> {'?'};
+        private static readonly ISet<char> _matchDot =
+            new HashSet<char> {'.'};
+        private static readonly ISet<char> _matchColon =
+            new HashSet<char> { ':'};
+        private static readonly ISet<char> _matchPlus =
+            new HashSet<char> { '+'};
+        private static readonly ISet<char> _matchStar =
+            new HashSet<char> { '*'};
+        private static readonly ISet<char> _matchPipe =
+            new HashSet<char> { '|'};
+        private static readonly ISet<char> _matchAny =
+            AllCharacters();
+        private static readonly ISet<char> _matchNonControlChar =
+            AllCharactersExcept('\"', '\\', '[', ']', '(', ')', '?', '+', '*', '-', '^', '|', '-');
+            //(c) => c != '\"' && c != '\\' && c != '[' && c != ']' && c != '(' && c != ')' && c != '?' && c != '+' && c != '*' && c != '-' && c != '^' && c != '|'
+            //&& c != '-';
 
         // An escape sequence that matches one specific character
         public Terminal<char, TValue> SingleCharEscape { get; private set; }
@@ -113,49 +134,27 @@ namespace Framework.Parsing
         public GrammarRule<IList<TValue>,TValue, IList<TValue>> SelectCharListAppendRule { get; private set; }
         public GrammarRule<TValue, IList<TValue>> SelectCharListSingleonRule { get; private set; }
 
-        static Terminal<char> MatchLiteral(string terminalName, string str)
-        {
-            return new Terminal<char>
-            {
-                InitialState = RegexCharNFABuilder.GetLiteralMatcher(str),
-                Name = terminalName
-            };
-        }
+        //static Terminal<char> MatchLiteral(string terminalName, string str)
+        //{
+        //    return new Terminal<char>
+        //    {
+        //        InitialState = RegexCharNFABuilder.GetLiteralMatcher(str),
+        //        Name = terminalName
+        //    };
+        //}
 
         static Terminal<char, TValue> MatchCapturingCharSequence(string terminalName, 
-            params Expression<Func<char, bool>>[] charMatches)
+            params ISet<char>[] charMatches)
         {
             //FiniteAutomatonState<char>[] states = GetCharSequenceStates(charMatches);
             var term = new Terminal<char, TValue>
             {
-                InitialState = TerminalClassifier<char>.GetExpressionSequenceMatcher(charMatches),
+                InitialState = TerminalClassifier<char>.GetSequenceMatcher(charMatches),
                 Name = terminalName
             };
             return term;
         }
 
-        private static FiniteAutomatonState<char>[] GetCharSequenceStates(Expression<Func<char, bool>>[] charMatches)
-        {
-            var states = new FiniteAutomatonState<char>[charMatches.Length + 1];
-            states[charMatches.Length] = new FiniteAutomatonState<char>
-                                             {
-                                                 IsAccepting = true
-                                             };
-            int i;
-            for (i = charMatches.Length - 1; i >= 0; --i)
-            {
-                states[i] = new FiniteAutomatonState<char>
-                {
-                    Transitions = new[] {
-                        new FiniteAutomatonStateTransition<char> {
-                            CharacterMatchExpression = charMatches[i],
-                            Target = states[i+1]
-                        }
-                    }
-                };
-            }
-            return states;
-        }
 
         // TODO: Inside of a [] or [^] construct, we need to take just about any character that's
         // not a ] literally.  Also, we need to support [a-bghyc-d]
@@ -167,18 +166,18 @@ namespace Framework.Parsing
             // TODO: Hex & Unicode escape
             OtherChar = MatchCapturingCharSequence("OtherChar", _matchNonControlChar);
 
-            var openNonCapturing = MatchLiteral("OpenNonCapturing", "(?:");
-            var openParen = MatchLiteral("OpenParen", "(");
-            var closeParen = MatchLiteral("CloseParen", ")");
-            var openBracket = MatchLiteral("OpenBracket", "[");
-            var openBracketCaret = MatchLiteral("OpenBracketCaret", "[^");
-            var closeBracket = MatchLiteral("CloseBracket", "]");
+            //var openNonCapturing = MatchLiteral("OpenNonCapturing", "(?:");
+            //var openParen = MatchLiteral("OpenParen", "(");
+            //var closeParen = MatchLiteral("CloseParen", ")");
+            //var openBracket = MatchLiteral("OpenBracket", "[");
+            //var openBracketCaret = MatchLiteral("OpenBracketCaret", "[^");
+            //var closeBracket = MatchLiteral("CloseBracket", "]");
 
-            var star = MatchLiteral("Star", "*");
-            var plus = MatchLiteral("Plus", "+");
-            var question = MatchLiteral("Question", "?");
-            var dash = MatchLiteral("Dash", "-");
-            var pipe = MatchLiteral("Pipe", "|");
+            //var star = MatchLiteral("Star", "*");
+            //var plus = MatchLiteral("Plus", "+");
+            //var question = MatchLiteral("Question", "?");
+            //var dash = MatchLiteral("Dash", "-");
+            //var pipe = MatchLiteral("Pipe", "|");
 
             // NonTerminals.
             SpecificChar = new NonTerminal<TValue> { Name = "SpecificChar" };
@@ -231,4 +230,5 @@ namespace Framework.Parsing
         }
 
     }
+     */
 }

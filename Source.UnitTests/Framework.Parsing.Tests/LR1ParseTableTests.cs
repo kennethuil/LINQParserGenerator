@@ -14,6 +14,7 @@ using Source.UnitTests.Framework.Parsing.Tests;
 
 namespace ParsingTests
 {
+    /*
     [TestFixture]
     public class LR1ParseTableTests
     {
@@ -536,5 +537,5 @@ namespace ParsingTests
             Assert.AreEqual(18.0, si.CurrentNonTerminalValue);
         }
     }
-
+    */
 }

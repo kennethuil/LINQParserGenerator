@@ -213,6 +213,7 @@ namespace Framework.Parsing
             List<Expression> jumps = new List<Expression>();
             var expCh = Expression.Parameter(typeof(TChar), "current");
             jumps.Add(Expression.Assign(expCh, Expression.Invoke(_currentChar, parseState)));
+            var cases = new List<SwitchCase>();
             foreach (var transition in state.Transitions)
             {
                 bool willBeCapturing = IsCapturing(transition.Target);
@@ -227,13 +228,19 @@ namespace Framework.Parsing
 
                 // On a character transition, consume the character and jump to the next state.
                 if (!transition.MatchEof)
-                    jumps.Add(Expression.IfThen(Expression.Invoke(transition.CharacterMatchExpression, expCh),
-                        Expression.Block(all)));
+                    cases.Add(Expression.SwitchCase(Expression.Block(all), from x in transition.CharactersMatched select Expression.Constant(x)));
+                //jumps.Add(Expression.IfThen(Expression.Invoke(transition.CharacterMatchExpression, expCh),
+                //    Expression.Block(all)));
                 else
-                    // EOF transition: can't consume a character, jump to the indicated state.
                     onEof = Expression.Block(all);
+                    // EOF transition: can't consume a character, jump to the indicated state.
+                    //onEof = Expression.Block(all);
             }
-
+            if (cases.Count > 0)
+                jumps.Add(Expression.Switch(expCh, noTransition, cases.ToArray()));
+            else
+                jumps.Add(noTransition);
+            
             var jumpBlock = Expression.Block(new ParameterExpression[] { expCh }, jumps);
 
             // The entire state block goes like this:

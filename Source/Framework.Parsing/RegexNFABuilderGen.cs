@@ -7,6 +7,7 @@ using Framework.CodeGen;
 
 namespace Framework.Parsing
 {
+    /*
     public class RegexNFABuilderGen
     {
         protected IExpressionHelper _expressionHelper;
@@ -272,25 +273,28 @@ namespace Framework.Parsing
         public static NFAFragment<TChar> Range<TChar>(NFAFragment<TChar> lower, NFAFragment<TChar> upper)
             where TChar : IComparable<TChar>, IEquatable<TChar>
         {
+
             // NOTE: assuming lower and upper each have their Begin and End joined directly by a single-character transition.
             // TODO: That assumption doesn't hold in the case of multi-byte characters parsed as a byte stream.
-            ParameterExpression ch = Expression.Parameter(typeof(TChar), "ch");
-            var newEnd = new FiniteAutomatonState<TChar> { };
-            Expression newExprBody = GetRangeExprBody(lower, upper, ch);
-            var newExpr = Expression.Lambda<Func<TChar, bool>>(newExprBody, true, ch);
-            return new NFAFragment<TChar>
-            {
-                Begin = new FiniteAutomatonState<TChar>
-                {
-                    Transitions = new[] {
-                        new FiniteAutomatonStateTransition<TChar> {
-                            CharacterMatchExpression = newExpr,
-                            Target = newEnd
-                        }
-                    }
-                },
-                End = newEnd
-            };
+            
+            //ParameterExpression ch = Expression.Parameter(typeof(TChar), "ch");
+            //var newEnd = new FiniteAutomatonState<TChar> { };
+            //Expression newExprBody = GetRangeExprBody(lower, upper, ch);
+            //var newExpr = Expression.Lambda<Func<TChar, bool>>(newExprBody, true, ch);
+            //return new NFAFragment<TChar>
+            //{
+            //    Begin = new FiniteAutomatonState<TChar>
+            //    {
+            //        Transitions = new[] {
+            //            new FiniteAutomatonStateTransition<TChar> {
+            //                CharacterMatchExpression = newExpr,
+            //                Target = newEnd
+            //            }
+            //        }
+            //    },
+            //    End = newEnd
+            //};
+             
         }
 
         public static NFAFragment<TChar> RangeNot<TChar>(NFAFragment<TChar> lower, NFAFragment<TChar> upper)
@@ -317,6 +321,7 @@ namespace Framework.Parsing
             };
         }
 
+        /*
         private static Expression GetRangeExprBody<TChar>(NFAFragment<TChar> lower, NFAFragment<TChar> upper, ParameterExpression ch)
             where TChar : IComparable<TChar>, IEquatable<TChar>
         {
@@ -334,6 +339,7 @@ namespace Framework.Parsing
             var lowerExpr = lowerTransition.CharacterMatchExpression;
             return ((BinaryExpression)lowerExpr.Body).Right;
         }
+        
 
         public static NFAFragment<TChar> SelectNot<TChar>(IList<NFAFragment<TChar>> items)
             where TChar : IComparable<TChar>, IEquatable<TChar>
@@ -381,6 +387,7 @@ namespace Framework.Parsing
             return l;
         }
 
-
+    
     }
+     */
 }

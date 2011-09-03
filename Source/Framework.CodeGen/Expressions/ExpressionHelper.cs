@@ -49,12 +49,12 @@ namespace Framework.CodeGen.Expressions
 
         public Expression<Func<T, bool>> Or<T>(Expression<Func<T, bool>> first, Expression<Func<T, bool>> second)
         {
-            return Combine<T>(first, second, (x, y) => Expression.Or(x, y));
+            return Combine<T>(first, second, this.Or);
         }
 
         public Expression<Func<T, bool>> And<T>(Expression<Func<T, bool>> first, Expression<Func<T, bool>> second)
         {
-            return Combine<T>(first, second, (x, y) => Expression.And(x, y));
+            return Combine<T>(first, second, this.And);
         }
 
         public Expression<Func<T, bool>> AndNot<T>(Expression<Func<T, bool>> first, Expression<Func<T, bool>> second)
@@ -71,12 +71,175 @@ namespace Framework.CodeGen.Expressions
             return Expression.Or(first, second);
         }
 
+        bool IsComparison(BinaryExpression x)
+        {
+            switch (x.NodeType)
+            {
+                case ExpressionType.Equal:
+                case ExpressionType.NotEqual:
+                case ExpressionType.LessThanOrEqual:
+                case ExpressionType.LessThan:
+                case ExpressionType.GreaterThanOrEqual:
+                case ExpressionType.GreaterThan:
+                    return true;
+            }
+            return false;
+        }
+
+        IComparable Max(IComparable a, IComparable b)
+        {
+            return a.CompareTo(b) > 0 ? a : b;
+        }
+
+        Expression MaxExpr(IComparable a, IComparable b)
+        {
+            return System.Linq.Expressions.Expression.Constant(Max(a, b));
+        }
+
+        IComparable Min(IComparable a, IComparable b)
+        {
+            return a.CompareTo(b) < 0 ? a : b;
+        }
+
+        Expression MinExpr(IComparable a, IComparable b)
+        {
+            return Expression.Constant(Min(a, b));
+        }
+
+        Expression TryAndReduce(BinaryExpression first, BinaryExpression second)
+        {
+            if (IsComparison(first) && IsComparison(second))
+            {
+                // make sure all our assumptions are met.
+                ConstantExpression ce1 = first.Right as ConstantExpression;
+                if (ce1 == null)
+                    return null;
+                ConstantExpression ce2 = second.Right as ConstantExpression;
+                if (ce2 == null)
+                    return null;
+
+                IComparable c1 = ce1.Value as IComparable;
+                if (c1 == null)
+                    return null;
+                IComparable c2 = ce2.Value as IComparable;
+                if (c2 == null)
+                    return null;
+
+                if (first.NodeType == ExpressionType.Equal)
+                {
+                    if (second.NodeType == ExpressionType.Equal)
+                        return (c1.CompareTo(c2) == 0) ? (Expression)first : Expression.Constant(false);
+                    if (second.NodeType == ExpressionType.NotEqual)
+                        return (c1.CompareTo(c2) != 0) ? (Expression)first : Expression.Constant(false);
+                    if (second.NodeType == ExpressionType.LessThan)
+                        return (c1.CompareTo(c2) < 0) ? (Expression)first : Expression.Constant(false);
+                    if (second.NodeType == ExpressionType.LessThanOrEqual)
+                        return (c1.CompareTo(c2) <= 0) ? (Expression)first : Expression.Constant(false);
+                    if (second.NodeType == ExpressionType.GreaterThan)
+                        return (c1.CompareTo(c2) > 0) ? (Expression)first : Expression.Constant(false);
+                    if (second.NodeType == ExpressionType.GreaterThanOrEqual)
+                        return (c1.CompareTo(c2) >= 0) ? (Expression)first : Expression.Constant(false);
+                }
+                else if (first.NodeType == ExpressionType.NotEqual)
+                {
+                    if (second.NodeType == ExpressionType.NotEqual)
+                        return (c1.CompareTo(c2) == 0) ? (Expression)first : null;
+                    if (second.NodeType == ExpressionType.LessThan)
+                        return (c1.CompareTo(c2) >= 0) ? (Expression)first : null;
+                    if (second.NodeType == ExpressionType.LessThanOrEqual)
+                        return (c1.CompareTo(c2) > 0) ? first : null;
+                    if (second.NodeType == ExpressionType.GreaterThan)
+                        return (c1.CompareTo(c2) <= 0) ? first : null;
+                    if (second.NodeType == ExpressionType.GreaterThanOrEqual)
+                        return (c1.CompareTo(c2) < 0) ? first : null;
+                }
+                else if (first.NodeType == ExpressionType.LessThan)
+                {
+                    if (second.NodeType == ExpressionType.LessThan)
+                        return Expression.LessThan(first.Left, MinExpr(c1, c2));
+                    if (second.NodeType == ExpressionType.LessThanOrEqual)
+                        return (c1.CompareTo(c2) <= 0) ? first : second;
+
+                    // TODO: For integers, check for result x == c.
+                    if (second.NodeType == ExpressionType.GreaterThan)
+                        return (c1.CompareTo(c2) > 0) ? null : Expression.Constant(false);
+                    if (second.NodeType == ExpressionType.GreaterThanOrEqual)
+                        return (c1.CompareTo(c2) > 0) ? null : Expression.Constant(false);
+                }
+                else if (first.NodeType == ExpressionType.LessThanOrEqual)
+                {
+                    if (second.NodeType == ExpressionType.LessThanOrEqual)
+                        return Expression.LessThanOrEqual(first.Left, MinExpr(c1, c2));
+                    if (second.NodeType == ExpressionType.GreaterThan)
+                        return (c1.CompareTo(c2) > 0) ? null : Expression.Constant(false);
+                    if (second.NodeType == ExpressionType.GreaterThanOrEqual)
+                        return (c1.CompareTo(c2) == 0) ? (Expression)Expression.Equal(first.Left, Expression.Constant(c1))
+                            : ((c1.CompareTo(c2) > 0) ? null : Expression.Constant(false));
+                }
+                else if (first.NodeType == ExpressionType.GreaterThan)
+                {
+                    if (second.NodeType == ExpressionType.GreaterThan)
+                        return Expression.GreaterThan(first.Left, MaxExpr(c1, c2));
+                    if (second.NodeType == ExpressionType.GreaterThanOrEqual)
+                        return (c1.CompareTo(c2) >= 0) ? first : second;
+                }
+                else if (first.NodeType == ExpressionType.GreaterThanOrEqual)
+                {
+                    if (second.NodeType == ExpressionType.GreaterThanOrEqual)
+                        return Expression.GreaterThanOrEqual(first.Left, MaxExpr(c1, c2));
+                }
+
+                // If we got to this point, swapping the operands and retrying should do the trick
+                return TryAndReduce(second, first);
+            }
+
+            // TODO: Boolean reductions
+            return null;
+        }
+
+        Expression TryAndReduce(ConstantExpression ce, Expression other)
+        {
+            if ((bool)ce.Value)
+                return other;
+            return ce;
+        }
+
+        Expression TryAndReduce(Expression first, Expression second)
+        {
+            var ce = first as ConstantExpression;
+            if (ce != null)
+            {
+                var result = TryAndReduce(ce, second);
+                if (result != null)
+                    return result;
+            }
+            ce = second as ConstantExpression;
+            if (ce != null)
+            {
+                var result = TryAndReduce(first, ce);
+                if (result != null)
+                    return result;
+            }
+            
+            if (first is BinaryExpression && second is BinaryExpression)
+            {
+                var result = TryAndReduce((BinaryExpression)first, (BinaryExpression)second);
+                if (result != null)
+                    return result;
+            }
+            return null;
+        }
+           
         public Expression And(Expression first, Expression second)
         {
             if (first == null)
                 return second;
             if (second == null)
                 return first;
+
+            var result = TryAndReduce(first, second);
+            if (result != null)
+                return result;
             return Expression.And(first, second);
         }
 

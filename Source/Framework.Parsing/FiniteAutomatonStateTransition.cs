@@ -12,7 +12,12 @@ namespace Framework.Parsing
         /// <summary>
         /// An expression used to determine whether this transition is allowed upon consuming the given character.
         /// </summary>
-        public Expression<Func<TChar, bool>> CharacterMatchExpression { get; set; }
+        //public Expression<Func<TChar, bool>> CharacterMatchExpression { get; set; }
+
+        /// <summary>
+        /// A set of characters that this transition matches
+        /// </summary>
+        public ISet<TChar> CharactersMatched { get; set; }
 
         // TODO: Define a lambda that gets executed whenever this transition is taken, and have the Classifier generator create code to execute it.
         /// <summary>

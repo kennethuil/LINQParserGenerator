@@ -189,56 +189,39 @@ namespace Framework.Parsing
             mapping.Add(set, result);
 
             // NOTE: Expression<T> does not override Object.Equals or Object.getHashCode, so this table relies on reference equality.
-            var charMovesBuild = new Dictionary<Expression<Func<TChar, bool>>, StateSet>();
+            //var charMovesBuild = new Dictionary<Expression<Func<TChar, bool>>, StateSet>();
+            
             var eofMoveBuild = new StateSet();
             // All rejected terminals get propagated from the set that they're first seen.
             // NFA state sets with different sets of rejected terminals are considered distinct.
             eofMoveBuild.RejectedTerminals.UnionWith(EmptyIfNull(set.RejectedTerminals));
             eofMoveBuild.PossibleTerminals.UnionWith(EmptyIfNull(set.PossibleTerminals));
 
-            // Build a mapping of distinct character tests to the set of NFA states reachable through one transition on that test.
-            // Also, find the set of NFA states reachable through one transition on EOF.
-            // NOTE: No recursion happens while these sets are being built - we can only put sets in the mapping or associate them with
-            // DFA states after they're completely populated.
-            HashSet<Expression<Func<TChar, bool>>> allMatchTests = new HashSet<Expression<Func<TChar, bool>>>();
-            foreach (var state in set.States)
-            {
-                
-
-                foreach (var transition in EmptyIfNull(state.Transitions))
-                {
-                    if (transition.CharacterMatchExpression != null)
-                        allMatchTests.Add(_canonicalizer.GetInstance(transition.CharacterMatchExpression));
-                }
-            }
+            // Build all of the target state sets.  Keep track of which characters map to which sets, and which
+            // sets are mapped to by an EOF transition.
+            var movesByChar = new Dictionary<TChar, StateSet>();
             foreach (var state in set.States)
             {
                 foreach (var transition in EmptyIfNull(state.Transitions))
                 {
-                    var matchExpression = _canonicalizer.GetInstance(transition.CharacterMatchExpression);
-                    ISet<Expression<Func<TChar, bool>>> overlaps;
-                    if (matchExpression != null && _overlaps.TryGetValue(matchExpression, out overlaps))
+                    foreach (var ch in EmptyIfNull(transition.CharactersMatched))
                     {
-                        Expression<Func<TChar, bool>> anyOverlap = null;
-
-                        // For every transition condition from this state that this transition condition overlaps, we modify the match
-                        // expression on this transition to exclude all the overlapped transition conditions.
-                        foreach (var overlap in overlaps.Intersect(allMatchTests))
+                        StateSet targetSet;
+                        if (!movesByChar.TryGetValue(ch, out targetSet))
                         {
-                            anyOverlap = _expressionHelper.Or(anyOverlap, overlap);
+                            targetSet = new StateSet();
+                            // All rejected terminals get propagated from the set that they're first seen.
+                            // NFA state sets with different sets of rejected terminals are considered distinct.
+                            targetSet.RejectedTerminals.UnionWith(EmptyIfNull(set.RejectedTerminals));
+                            targetSet.PossibleTerminals.UnionWith(EmptyIfNull(set.PossibleTerminals));
 
-                            // If A implies B, then B overlaps A.  Therefore we can check for implications here and add an extra transition
-                            // on the more restrictive condition pointing to the target of the less restrictive condition, while we're working on
-                            // the less restrictive condition and have its target.  This saves us from having to build an extra mapping.
-                            if (Implies(overlap, matchExpression))
-                                AddCharacterMove(set, transition, overlap, charMovesBuild);
+                            // Add to the charMovesBuild set.
+                            movesByChar.Add(ch, targetSet);
                         }
-                        
-                        matchExpression = _expressionHelper.AndNot(matchExpression, anyOverlap);
-                    }
-                    if (matchExpression != null)
-                    {
-                        AddCharacterMove(set, transition, matchExpression, charMovesBuild);
+                        // Merge the transition's target into the set
+                        targetSet.States.Add(transition.Target);
+                        targetSet.RejectedTerminals.UnionWith(EmptyIfNull(transition.Target.RejectTerminals));
+                        targetSet.PossibleTerminals.UnionWith(EmptyIfNull(transition.Target.PossibleTerminals));
                     }
 
                     if (transition.MatchEof)
@@ -251,23 +234,39 @@ namespace Framework.Parsing
                 }
             }
 
-            // Now that all sets are fully populated, we can recursively turn them into DFA states and attach transitions to them
-            // to our result DFA state.
-            foreach (var entry in charMovesBuild)
+            // Now that all target state sets are complete, it's time to group sets of characters together by target state set.
+            var movesByTarget = new Dictionary<StateSet, ISet<TChar>>();
+            foreach (var entry in movesByChar)
             {
-                var charTest = entry.Key;
-                var targetSet = entry.Value;
+                var ch = entry.Key;
+                var target = entry.Value;
+                ISet<TChar> charSet;
+                if (!movesByTarget.TryGetValue(target, out charSet))
+                {
+                    charSet = new HashSet<TChar>();
+                    movesByTarget.Add(target, charSet);
+                }
+                charSet.Add(ch);
+            }
+
+            foreach (var entry in movesByTarget)
+            {
+                var charSet = entry.Value;
+                var targetSet = entry.Key;
                 EpsilonClosure(targetSet);
                 var targetState = ConvertToDFA(mapping, targetSet);
                 if (targetState == null)
                     continue;
 
+
                 ((List<FiniteAutomatonStateTransition<TChar>>)result.Transitions).Add(new FiniteAutomatonStateTransition<TChar>
                 {
-                    CharacterMatchExpression = charTest,
+                    CharactersMatched = charSet,
                     Target = targetState
                 });
+
             }
+
             if (eofMoveBuild.States.Count != 0)
             {
                 EpsilonClosure(eofMoveBuild);
@@ -283,26 +282,7 @@ namespace Framework.Parsing
             return result;
         }
 
-        private void AddCharacterMove(StateSet set, FiniteAutomatonStateTransition<TChar> transition, Expression<Func<TChar, bool>> matchExpression, Dictionary<Expression<Func<TChar, bool>>, StateSet> charMovesBuild)
-        {
-            matchExpression = _canonicalizer.GetInstance(matchExpression);
-            StateSet targetSet;
-            if (!charMovesBuild.TryGetValue(matchExpression, out targetSet))
-            {
-                targetSet = new StateSet();
-                // All rejected terminals get propagated from the set that they're first seen.
-                // NFA state sets with different sets of rejected terminals are considered distinct.
-                targetSet.RejectedTerminals.UnionWith(EmptyIfNull(set.RejectedTerminals));
-                targetSet.PossibleTerminals.UnionWith(EmptyIfNull(set.PossibleTerminals));
 
-                // Add to the charMovesBuild set.
-                charMovesBuild.Add(matchExpression, targetSet);
-            }
-            // Merge the transition's target into the set
-            targetSet.States.Add(transition.Target);
-            targetSet.RejectedTerminals.UnionWith(EmptyIfNull(transition.Target.RejectTerminals));
-            targetSet.PossibleTerminals.UnionWith(EmptyIfNull(transition.Target.PossibleTerminals));
-        }
 
         public FiniteAutomatonState<TChar> ConvertToDFA(FiniteAutomatonState<TChar> nsaBeginState)
         {
@@ -363,7 +343,7 @@ namespace Framework.Parsing
             return newStartState;
         }
 
-        public static FiniteAutomatonState<TChar> GetExpressionSequenceMatcher(IEnumerable<Expression<Func<TChar, bool>>> seq)
+        public static FiniteAutomatonState<TChar> GetSequenceMatcher(IEnumerable<ISet<TChar>> seq)
         {
             if (seq.Any())
             {
@@ -373,8 +353,8 @@ namespace Framework.Parsing
                 {
                     Transitions = new[] {
                         new FiniteAutomatonStateTransition<TChar> {
-                            CharacterMatchExpression = first,
-                            Target = TerminalClassifier<TChar>.GetExpressionSequenceMatcher(rest)
+                            CharactersMatched = first,
+                            Target = TerminalClassifier<TChar>.GetSequenceMatcher(rest)
                         }
                     }
                 };
@@ -385,9 +365,9 @@ namespace Framework.Parsing
             };
         }
 
-        public static FiniteAutomatonState<TChar> GetExpressionSequenceMatcher(params Expression<Func<TChar, bool>>[] seq)
+        public static FiniteAutomatonState<TChar> GetSequenceMatcher(params ISet<TChar>[] seq)
         {
-            return GetExpressionSequenceMatcher((IEnumerable<Expression<Func<TChar, bool>>>)seq);
+            return GetSequenceMatcher((IEnumerable<ISet<TChar>>)seq);
         }
 
         public TerminalClassifierSession<TChar> Classifier(Type parseStateType, Type resultType)

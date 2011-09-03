@@ -102,35 +102,20 @@ namespace Source.UnitTests.Framework.Parsing.Tests
         public void Initialize()
         {
             _expressionHelper = new ExpressionHelper();
-            Expression<Func<char, bool>> matchOpen = (c) => c == '<';
-            Expression<Func<char, bool>> matchClose = (c) => c == '>';
-            Expression<Func<char, bool>> matchSlash = (c) => c == '/';
-            Expression<Func<char, bool>> matchLetter = (c) => char.IsLetter(c);
-            Expression<Func<char, bool>> matchLetterOrDigit = (c) => char.IsLetterOrDigit(c);
-            Expression<Func<char, bool>> matchw = (c) => c == 'w';
-            Expression<Func<char, bool>> matchh = (c) => c == 'h';
-            Expression<Func<char, bool>> matchi = (c) => c == 'i';
-            Expression<Func<char, bool>> matchl = (c) => c == 'l';
-            Expression<Func<char, bool>> matche = (c) => c == 'e';
-            Expression<Func<char, bool>> matchf = (c) => c == 'f';
-            Expression<Func<char, bool>> matchSpace = (c) => char.IsWhiteSpace(c);
+            var matchOpen = new HashSet<char> { '<' };
+            var matchClose = new HashSet<char> { '>' };
+            var matchSlash = new HashSet<char> { '/' };
+            var matchLetter = Utilities.AllLetters();
+            var matchLetterOrDigit = Utilities.Union(matchLetter, Utilities.AllDigits());
+            var matchw = new HashSet<char> { 'w' };
+            var matchh = new HashSet<char> { 'h' };
+            var matchi = new HashSet<char> { 'i' };
+            var matchl = new HashSet<char> { 'l' };
+            var matche = new HashSet<char> { 'e' };
+            var matchf = new HashSet<char> { 'f' };
+            var matchSpace = Utilities.AllWhitespace();
 
             _parserGenerator = new TerminalClassifier<char>(_expressionHelper);
-
-            // NOTE: The generator doesn't automatically follow multiple implications yet.
-            _parserGenerator.AddImplies(matchLetter, matchLetterOrDigit);
-            _parserGenerator.AddImplies(matchw, matchLetter);
-            _parserGenerator.AddImplies(matchh, matchLetter);
-            _parserGenerator.AddImplies(matchi, matchLetter);
-            _parserGenerator.AddImplies(matchl, matchLetter);
-            _parserGenerator.AddImplies(matche, matchLetter);
-            _parserGenerator.AddImplies(matchf, matchLetter);
-            _parserGenerator.AddImplies(matchw, matchLetterOrDigit);
-            _parserGenerator.AddImplies(matchh, matchLetterOrDigit);
-            _parserGenerator.AddImplies(matchi, matchLetterOrDigit);
-            _parserGenerator.AddImplies(matchl, matchLetterOrDigit);
-            _parserGenerator.AddImplies(matche, matchLetterOrDigit);
-            _parserGenerator.AddImplies(matchf, matchLetterOrDigit);
             // Simple XML tags (no attributes)
             _openTag = new Terminal<char>
             {
@@ -193,7 +178,7 @@ namespace Source.UnitTests.Framework.Parsing.Tests
             var leafClose = new FiniteAutomatonState<char>
             {
                 Transitions = new[] {new FiniteAutomatonStateTransition<char> {
-                    CharacterMatchExpression = matchClose,
+                    CharactersMatched = matchClose,
                     Target = leafTagAccept
                 }
                 }
@@ -203,10 +188,10 @@ namespace Source.UnitTests.Framework.Parsing.Tests
             {
                 Transitions = new[] {
                     new FiniteAutomatonStateTransition<char> {
-                        CharacterMatchExpression = matchSlash,
+                        CharactersMatched = matchSlash,
                         Target = leafClose},
                     new FiniteAutomatonStateTransition<char> {
-                        CharacterMatchExpression = matchLetterOrDigit}}
+                        CharactersMatched = matchLetterOrDigit}}
             };
             leafName.Transitions.Skip(1).First().Target = leafName;
 
@@ -214,7 +199,7 @@ namespace Source.UnitTests.Framework.Parsing.Tests
             {
                 Transitions = new[] {
                     new FiniteAutomatonStateTransition<char> {
-                        CharacterMatchExpression = matchLetter,
+                        CharactersMatched = matchLetter,
                         Target = leafName}}
             };
 
@@ -222,7 +207,7 @@ namespace Source.UnitTests.Framework.Parsing.Tests
             {
                 Transitions = new[] {
                     new FiniteAutomatonStateTransition<char> {
-                        CharacterMatchExpression = matchOpen,
+                        CharactersMatched = matchOpen,
                         Target = beginLeafName}
                 }
             };
@@ -231,7 +216,7 @@ namespace Source.UnitTests.Framework.Parsing.Tests
             {
                 Transitions = new[] {
                     new FiniteAutomatonStateTransition<char> {
-                        CharacterMatchExpression = matchClose,
+                        CharactersMatched = matchClose,
                         Target = closeTagAccept}
                 }
             };
@@ -246,7 +231,7 @@ namespace Source.UnitTests.Framework.Parsing.Tests
                     },
                     new FiniteAutomatonStateTransition<char>
                     {
-                        CharacterMatchExpression = matchLetterOrDigit
+                        CharactersMatched = matchLetterOrDigit
                     }
                 }
             };
@@ -257,7 +242,7 @@ namespace Source.UnitTests.Framework.Parsing.Tests
                 Transitions = new[] {
                     new FiniteAutomatonStateTransition<char>
                     {
-                        CharacterMatchExpression = matchLetter,
+                        CharactersMatched = matchLetter,
                         Target = closeName
                     }
                 }
@@ -266,7 +251,7 @@ namespace Source.UnitTests.Framework.Parsing.Tests
             {
                 Transitions = new[] {
                     new FiniteAutomatonStateTransition<char> {
-                        CharacterMatchExpression = matchSlash,
+                        CharactersMatched = matchSlash,
                         Target = beginCloseName}
                 }
             };
@@ -274,7 +259,7 @@ namespace Source.UnitTests.Framework.Parsing.Tests
             {
                 Transitions = new[] {
                     new FiniteAutomatonStateTransition<char> {
-                        CharacterMatchExpression = matchOpen,
+                        CharactersMatched = matchOpen,
                         Target = closeSlash}}
             };
 
@@ -282,10 +267,10 @@ namespace Source.UnitTests.Framework.Parsing.Tests
             {
                 Transitions = new[] {
                     new FiniteAutomatonStateTransition<char> {
-                        CharacterMatchExpression = matchClose,
+                        CharactersMatched = matchClose,
                         Target = openTagAccept},
                     new FiniteAutomatonStateTransition<char> {
-                        CharacterMatchExpression = matchLetterOrDigit}
+                        CharactersMatched = matchLetterOrDigit}
                 }
             };
             openName.Transitions.Skip(1).First().Target = openName;
@@ -294,7 +279,7 @@ namespace Source.UnitTests.Framework.Parsing.Tests
             {
                 Transitions = new[] {
                     new FiniteAutomatonStateTransition<char> {
-                        CharacterMatchExpression = matchLetter,
+                        CharactersMatched = matchLetter,
                         Target = openName
                     }
                 }
@@ -304,7 +289,7 @@ namespace Source.UnitTests.Framework.Parsing.Tests
             {
                 Transitions = new[] {
                     new FiniteAutomatonStateTransition<char> {
-                        CharacterMatchExpression = matchOpen,
+                        CharactersMatched = matchOpen,
                         Target = beginOpenName}}
             };
 
@@ -321,7 +306,7 @@ namespace Source.UnitTests.Framework.Parsing.Tests
             {
                 Transitions = new[] {
                     new FiniteAutomatonStateTransition<char> {
-                        CharacterMatchExpression = matchf,
+                        CharactersMatched = matchf,
                         Target = acceptIf
                     }
                 }
@@ -331,7 +316,7 @@ namespace Source.UnitTests.Framework.Parsing.Tests
 
                 Transitions = new[] {
                     new FiniteAutomatonStateTransition<char> {
-                        CharacterMatchExpression = matchi,
+                        CharactersMatched = matchi,
                         Target = fIf
                     }
                 }
@@ -347,7 +332,7 @@ namespace Source.UnitTests.Framework.Parsing.Tests
             {
                 Transitions = new[] {
                     new FiniteAutomatonStateTransition<char> {
-                        CharacterMatchExpression = matche,
+                        CharactersMatched = matche,
                         Target = acceptWhile
                     }
                 }
@@ -357,7 +342,7 @@ namespace Source.UnitTests.Framework.Parsing.Tests
             {
                 Transitions = new[] {
                     new FiniteAutomatonStateTransition<char> {
-                        CharacterMatchExpression = matchl,
+                        CharactersMatched = matchl,
                         Target = eWhile}
                 }
             };
@@ -366,7 +351,7 @@ namespace Source.UnitTests.Framework.Parsing.Tests
             {
                 Transitions = new[] {
                     new FiniteAutomatonStateTransition<char> {
-                        CharacterMatchExpression = matchi,
+                        CharactersMatched = matchi,
                         Target = lWhile}
                 }
             };
@@ -375,7 +360,7 @@ namespace Source.UnitTests.Framework.Parsing.Tests
             {
                 Transitions = new[] {
                     new FiniteAutomatonStateTransition<char> {
-                        CharacterMatchExpression = matchh,
+                        CharactersMatched = matchh,
                         Target = iWhile}
                 }
             };
@@ -384,7 +369,7 @@ namespace Source.UnitTests.Framework.Parsing.Tests
             {
                 Transitions = new[] {
                     new FiniteAutomatonStateTransition<char> {
-                        CharacterMatchExpression = matchw,
+                        CharactersMatched = matchw,
                         Target = hWhile}
                 }
             };
@@ -395,7 +380,7 @@ namespace Source.UnitTests.Framework.Parsing.Tests
                 IsAccepting = true,
                 Transitions = new[] {
                     new FiniteAutomatonStateTransition<char> {
-                        CharacterMatchExpression = matchLetterOrDigit
+                        CharactersMatched = matchLetterOrDigit
                     }
                 }
             };
@@ -405,7 +390,7 @@ namespace Source.UnitTests.Framework.Parsing.Tests
             {
                 Transitions = new[] {
                     new FiniteAutomatonStateTransition<char> {
-                        CharacterMatchExpression = matchLetter,
+                        CharactersMatched = matchLetter,
                         Target = identifierChar
                     }
                 }
@@ -417,7 +402,7 @@ namespace Source.UnitTests.Framework.Parsing.Tests
                 IsAccepting = true,
                 Transitions = new[] {
                     new FiniteAutomatonStateTransition<char> {
-                        CharacterMatchExpression = matchSpace
+                        CharactersMatched = matchSpace
                     }
                 }
             };
@@ -428,7 +413,7 @@ namespace Source.UnitTests.Framework.Parsing.Tests
             {
                 Transitions = new[] {
                     new FiniteAutomatonStateTransition<char> {
-                        CharacterMatchExpression = matchSpace,
+                        CharactersMatched = matchSpace,
                         Target=whitespaceChar
                     }
                 }
@@ -712,7 +697,7 @@ namespace Source.UnitTests.Framework.Parsing.Tests
                 foreach (var trans in state.Transitions)
                 {
                     Debug.WriteLine("  Transition:");
-                    Debug.WriteLine("    Match Expression: " + trans.CharacterMatchExpression);
+                    Debug.WriteLine("    Match Expression: " + trans.CharactersMatched);
                     Debug.WriteLine("    MatchEof: " + trans.MatchEpsilon);
                     Debug.WriteLine("    MatchEpsilon: " + trans.MatchEpsilon);
                     Debug.WriteLine("    Target: " + trans.Target.GetHashCode());

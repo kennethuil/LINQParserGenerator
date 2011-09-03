@@ -55,7 +55,6 @@
     <Compile Include="Grammar.cs" />
     <Compile Include="GrammarRule.cs" />
     <Compile Include="GrammarSymbol.cs" />
-    <Compile Include="HashableSet.cs" />
     <Compile Include="LR1Item.cs" />
     <Compile Include="LR1ItemSetCollection.cs" />
     <Compile Include="LRParseAction.cs" />
@@ -77,6 +76,7 @@
     <Compile Include="SetComparer.cs" />
     <Compile Include="ShiftAction.cs" />
     <Compile Include="Terminal.cs" />
+    <Compile Include="Utilities.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Framework.CodeGen\Framework.CodeGen.csproj">

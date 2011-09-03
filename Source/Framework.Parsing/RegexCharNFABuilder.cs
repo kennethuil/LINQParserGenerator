@@ -8,16 +8,69 @@ using Framework.CodeGen;
 
 namespace Framework.Parsing
 {
+    /*
     public class RegexCharNFABuilder : RegexNFABuilderGen
     {
-        static IDictionary<char, Expression<Func<char, bool>>> _specificCharExpr = new Dictionary<char, Expression<Func<char, bool>>>();
-        static Expression<Func<char, bool>> _any = (c) => true;
-        static Expression<Func<char, bool>> _word = (c) => char.IsLetterOrDigit(c);
-        static Expression<Func<char, bool>> _notWord = (c) => !char.IsLetterOrDigit(c);
-        static Expression<Func<char, bool>> _whitespace = (c) => char.IsWhiteSpace(c);
-        static Expression<Func<char, bool>> _notWhitespace = (c) => !char.IsWhiteSpace(c);
-        static Expression<Func<char, bool>> _digit = (c) => char.IsDigit(c);
-        static Expression<Func<char, bool>> _notDigit = (c) => !char.IsDigit(c);
+        static ISet<char> _any = AllCharacters();
+        static ISet<char> _digit = new HashSet<char> { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' };
+        static ISet<char> _notDigit = Except(_any, _digit);
+        static ISet<char> _letter = AllLetters();
+        static ISet<char> _word = Union(_digit, _letter);
+        static ISet<char> _notWord = Except(_any, _word);
+        static ISet<char> _whitespace = new HashSet<char> { '\t', '\r', '\n', ' ' };
+        static ISet<char> _notWhitespace = Except(_any, _whitespace);
+
+
+        private static HashSet<char> AllLetters()
+        {
+            char ch;
+            HashSet<char> result = new HashSet<char>();
+            for (ch = 'A'; ch <= 'Z'; ++ch)
+            {
+                result.Add(ch);
+            }
+            for (ch = 'a'; ch <= 'z'; ++ch)
+            {
+                result.Add(ch);
+            }
+            return result;
+        }
+
+
+
+        private static HashSet<char> AllCharacters()
+        {
+            char ch = '\x0000';
+            HashSet<char> result = new HashSet<char>();
+            do
+            {
+                result.Add(ch);
+                ++ch;
+            } while (ch != '\x0000');
+            return result;
+        }
+
+         private static ISet<char> Except(ISet<char> first, ISet<char> second)
+        {
+            HashSet<char> result = new HashSet<char>(first);
+            result.ExceptWith(second);
+            return result;
+        }
+
+        private static ISet<char> Union(ISet<char> first, ISet<char> second)
+        {
+            HashSet<char> result = new HashSet<char>(first);
+            result.UnionWith(second);
+            return result;
+        }
+
+        private static ISet<char> Intersect(ISet<char> first, ISet<char> second)
+        {
+            HashSet<char> result = new HashSet<char>(first);
+            result.IntersectWith(second);
+            return result;
+        }
+
 
         public class NFAConversionState : StringInput
         {
@@ -38,6 +91,7 @@ namespace Framework.Parsing
         {
         }
 
+        /*
         public void SetupImplies(TerminalClassifier<char> classifier)
         {
             classifier.AddImplies(_word, _any);
@@ -86,7 +140,7 @@ namespace Framework.Parsing
                 classifier.AddImplies(entry.Value, _any);
             }
         }
-
+        
         public static FiniteAutomatonState<char> GetLiteralMatcher(string literal)
         {
             int i;
@@ -102,7 +156,8 @@ namespace Framework.Parsing
                 {
                     Transitions = new[] {
                         new FiniteAutomatonStateTransition<char> {
-                            CharacterMatchExpression = SpecificCharMatchExpr(literal[i]),
+                            //CharacterMatchExpression = SpecificCharMatchExpr(literal[i]),
+                            CharactersMatched = new HashableSet<char> {literal[i]},
                             Target = current
                         }
                     }
@@ -112,8 +167,9 @@ namespace Framework.Parsing
             return current;
         }
 
-        public static Expression<Func<char, bool>> SpecificCharMatchExpr(char ch)
+        public static ISet<char> SpecificCharMatchExpr(char ch)
         {
+            /*
             Expression<Func<char, bool>> expr;
             if (_specificCharExpr.TryGetValue(ch, out expr))
                 return expr;
@@ -123,23 +179,24 @@ namespace Framework.Parsing
                 Expression.Equal(expCh, Expression.Constant(ch)), expCh);
             _specificCharExpr[ch] = expr;
             return expr;
-
+            
+            return new HashSet<char> { ch };
         }
 
         public static NFAFragment<char> OtherChar(string ch)
         {
-            Expression<Func<char, bool>> expr;
+            ISet<char> charSet;
             if (ch[0] == '.')
-                expr = _any;
-            expr = SpecificCharMatchExpr(ch[0]);
+                charSet = _any;
+            //expr = SpecificCharMatchExpr(ch[0]);
 
-            return SingleCharExpressionFragment(expr);
+            return SingleCharExpressionFragment(new HashSet<char> {ch[0]});
         }
 
         public static NFAFragment<char> SingleCharEscape(string esc)
         {
             var escapeChar = esc[1];
-            Expression<Func<char, bool>> expr;
+            ISet<char> expr;
             switch (escapeChar)
             {
                 case 'a':
@@ -177,7 +234,7 @@ namespace Framework.Parsing
         public static NFAFragment<char> CharClassEscape(string esc)
         {
             var escapeChar = esc[1];
-            Expression<Func<char, bool>> expr = null;
+            ISet<char> expr = null;
 
             switch (escapeChar)
             {
@@ -203,7 +260,7 @@ namespace Framework.Parsing
             return SingleCharExpressionFragment(expr);
         }
 
-        private static NFAFragment<char> SingleCharExpressionFragment(Expression<Func<char, bool>> expr)
+        private static NFAFragment<char> SingleCharExpressionFragment(ISet<char> expr)
         {
             var newEnd = new FiniteAutomatonState<char>
                              {
@@ -214,7 +271,7 @@ namespace Framework.Parsing
                                        {
                                            Transitions = new[] {
                                                                    new FiniteAutomatonStateTransition<char> {
-                                                                                                                CharacterMatchExpression = expr,
+                                                                                                                CharactersMatched = expr,
                                                                                                                 Target = newEnd
                                                                                                             }
                                                                }
@@ -300,6 +357,8 @@ namespace Framework.Parsing
                         Expression.PropertyOrField(expFragment, "Begin")), expString);
             return converter;
         }
+     
 
     }
+     */
 }

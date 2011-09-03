@@ -75,9 +75,9 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Framework.Parsing.Tests\BooleanExpressionTests.cs" />
     <Compile Include="Framework.Parsing.Tests\FiniteAutomatonTests.cs" />
     <Compile Include="Framework.Parsing.Tests\LR1ParseTableTests.cs" />
-    <Compile Include="Framework.Parsing.Tests\ParserGeneratorTests.cs" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Properties\" />
