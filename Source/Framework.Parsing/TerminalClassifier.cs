@@ -200,36 +200,74 @@ namespace Framework.Parsing
             // Build all of the target state sets.  Keep track of which characters map to which sets, and which
             // sets are mapped to by an EOF transition.
             var movesByChar = new Dictionary<TChar, StateSet>();
+            StateSet exceptTarget = CreateTargetSet(set);
+
             foreach (var state in set.States)
             {
                 foreach (var transition in EmptyIfNull(state.Transitions))
                 {
-                    foreach (var ch in EmptyIfNull(transition.CharactersMatched))
+                    if (!transition.MatchAllExcept)
                     {
-                        StateSet targetSet;
-                        if (!movesByChar.TryGetValue(ch, out targetSet))
+                        // Characters already being tracked
+                        var existingChars = EmptyIfNull(transition.Characters).Intersect(movesByChar.Keys);
+                        foreach (var ch in existingChars)
                         {
-                            targetSet = new StateSet();
-                            // All rejected terminals get propagated from the set that they're first seen.
-                            // NFA state sets with different sets of rejected terminals are considered distinct.
-                            targetSet.RejectedTerminals.UnionWith(EmptyIfNull(set.RejectedTerminals));
-                            targetSet.PossibleTerminals.UnionWith(EmptyIfNull(set.PossibleTerminals));
+                            StateSet targetSet = movesByChar[ch];
+                            MergeInTransitionTarget(transition, targetSet);
+                        }
+
+                        // New characters introduced by this transition
+                        var newChars = EmptyIfNull(transition.Characters).Except(movesByChar.Keys);
+                        foreach (var newChar in newChars)
+                        {
+                            StateSet targetSet = CreateTargetSet(set);
 
                             // Add to the charMovesBuild set.
-                            movesByChar.Add(ch, targetSet);
+                            movesByChar.Add(newChar, targetSet);
+                            // Merge the transition's target into the set
+                            MergeInTransitionTarget(transition, targetSet);
                         }
-                        // Merge the transition's target into the set
-                        targetSet.States.Add(transition.Target);
-                        targetSet.RejectedTerminals.UnionWith(EmptyIfNull(transition.Target.RejectTerminals));
-                        targetSet.PossibleTerminals.UnionWith(EmptyIfNull(transition.Target.PossibleTerminals));
                     }
-
+                    else
+                    {
+                        // New characters introduced by this transition.
+                        var newChars = EmptyIfNull(transition.Characters).Except(movesByChar.Keys);
+                        foreach (var newChar in newChars)
+                        {
+                            StateSet targetSet = CreateTargetSet(set);
+                            // Add to the charMovesBuild set
+                            movesByChar.Add(newChar, targetSet);
+                            // Do NOT merge the transition's target into the set.  The transition is telling us what
+                            // characters do NOT match.  We'll merge later on when we go through all the except transitions
+                            // to find out which tracked characters are not mentioned in each transition.
+                        }
+                    }
                     if (transition.MatchEof)
                     {
                         // Merge the transition's target into the set
                         eofMoveBuild.States.Add(transition.Target);
                         eofMoveBuild.RejectedTerminals.UnionWith(EmptyIfNull(transition.Target.RejectTerminals));
                         eofMoveBuild.PossibleTerminals.UnionWith(EmptyIfNull(transition.Target.PossibleTerminals));
+                    }
+                }
+            }
+            foreach (var state in set.States)
+            {
+                foreach (var transition in EmptyIfNull(state.Transitions))
+                {
+                    if (transition.MatchAllExcept)
+                    {
+                        // Tracked characters that aren't in the transition's except set.  They match this transition.
+                        var includedChars = movesByChar.Keys.Except(EmptyIfNull(transition.Characters));
+                        foreach (var ch in includedChars)
+                        {
+                            StateSet targetSet = movesByChar[ch];
+                            MergeInTransitionTarget(transition, targetSet);
+                        }
+                        // The exceptTarget is the set of all states pointed to by an except transition.
+                        // The resulting DFA will have one except transition pointing to it, indicating that all
+                        // characters not mentioned in any transition will match.
+                        MergeInState(state, exceptTarget);
                     }
                 }
             }
@@ -253,20 +291,38 @@ namespace Framework.Parsing
             {
                 var charSet = entry.Value;
                 var targetSet = entry.Key;
+                if (targetSet.States.Count == 0)
+                    continue;
+
                 EpsilonClosure(targetSet);
                 var targetState = ConvertToDFA(mapping, targetSet);
                 if (targetState == null)
                     continue;
 
-
                 ((List<FiniteAutomatonStateTransition<TChar>>)result.Transitions).Add(new FiniteAutomatonStateTransition<TChar>
                 {
-                    CharactersMatched = charSet,
+                    Characters = charSet,
                     Target = targetState
                 });
-
             }
 
+            // Add an except transition to the except state if applicable.
+            if (exceptTarget.States.Count != 0)
+            {
+                EpsilonClosure(exceptTarget);
+                var targetState = ConvertToDFA(mapping, exceptTarget);
+                if (targetState != null)
+                {
+                    ((List<FiniteAutomatonStateTransition<TChar>>)result.Transitions).Add(new FiniteAutomatonStateTransition<TChar>
+                    {
+                        Characters = new HashSet<TChar>(movesByChar.Keys),
+                        MatchAllExcept = true,
+                        Target = targetState
+                    });
+                }
+            }
+
+            
             if (eofMoveBuild.States.Count != 0)
             {
                 EpsilonClosure(eofMoveBuild);
@@ -282,6 +338,29 @@ namespace Framework.Parsing
             return result;
         }
 
+        private StateSet CreateTargetSet(StateSet set)
+        {
+            StateSet targetSet = new StateSet();
+            // All rejected terminals get propagated from the set that they're first seen.
+            // NFA state sets with different sets of rejected terminals are considered distinct.
+            targetSet.RejectedTerminals.UnionWith(EmptyIfNull(set.RejectedTerminals));
+            targetSet.PossibleTerminals.UnionWith(EmptyIfNull(set.PossibleTerminals));
+            return targetSet;
+        }
+
+        private void MergeInState(FiniteAutomatonState<TChar> state, StateSet targetSet)
+        {
+            targetSet.States.Add(state);
+            targetSet.RejectedTerminals.UnionWith(EmptyIfNull(state.RejectTerminals));
+            targetSet.PossibleTerminals.UnionWith(EmptyIfNull(state.PossibleTerminals));
+        }
+
+        private void MergeInTransitionTarget(FiniteAutomatonStateTransition<TChar> transition, StateSet targetSet)
+        {
+            targetSet.States.Add(transition.Target);
+            targetSet.RejectedTerminals.UnionWith(EmptyIfNull(transition.Target.RejectTerminals));
+            targetSet.PossibleTerminals.UnionWith(EmptyIfNull(transition.Target.PossibleTerminals));
+        }
 
 
         public FiniteAutomatonState<TChar> ConvertToDFA(FiniteAutomatonState<TChar> nsaBeginState)
@@ -353,7 +432,7 @@ namespace Framework.Parsing
                 {
                     Transitions = new[] {
                         new FiniteAutomatonStateTransition<TChar> {
-                            CharactersMatched = first,
+                            Characters = first,
                             Target = TerminalClassifier<TChar>.GetSequenceMatcher(rest)
                         }
                     }
@@ -368,6 +447,34 @@ namespace Framework.Parsing
         public static FiniteAutomatonState<TChar> GetSequenceMatcher(params ISet<TChar>[] seq)
         {
             return GetSequenceMatcher((IEnumerable<ISet<TChar>>)seq);
+        }
+
+        public static FiniteAutomatonState<TChar> GetLiteralMatcher(IEnumerable<TChar> seq)
+        {
+            if (seq.Any())
+            {
+                var first = seq.First();
+                var rest = seq.Skip(1);
+                return new FiniteAutomatonState<TChar>
+                {
+                    Transitions = new[] {
+                        new FiniteAutomatonStateTransition<TChar> {
+                            Characters = new HashSet<TChar> {first},
+                            Target = GetLiteralMatcher(rest)
+                        }
+                    }
+                };
+                
+            }
+            return new FiniteAutomatonState<TChar>
+            {
+                IsAccepting = true
+            };
+        }
+
+        public static FiniteAutomatonState<TChar> GetLiteralMatcher(params TChar[] seq)
+        {
+            return GetLiteralMatcher((IEnumerable<TChar>)seq);
         }
 
         public TerminalClassifierSession<TChar> Classifier(Type parseStateType, Type resultType)

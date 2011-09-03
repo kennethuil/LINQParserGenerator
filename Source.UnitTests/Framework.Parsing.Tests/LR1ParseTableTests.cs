@@ -14,7 +14,7 @@ using Source.UnitTests.Framework.Parsing.Tests;
 
 namespace ParsingTests
 {
-    /*
+    
     [TestFixture]
     public class LR1ParseTableTests
     {
@@ -30,7 +30,7 @@ namespace ParsingTests
         TerminalClassifier<char> _classifierGen;
         IExpressionHelper _expressionHelper;
         Func<string, FiniteAutomatonState<char>> _regexCompiler;
-        RegexCharNFABuilder _regexNFABuilder;
+        //RegexCharNFABuilder _regexNFABuilder;
 
         Terminal<char> GetNumberTerminal<T>(Expression<Func<string,T>> action)
         {
@@ -44,14 +44,15 @@ namespace ParsingTests
         {
             _expressionHelper = new ExpressionHelper();
 
-            _regexNFABuilder = new RegexCharNFABuilder(_expressionHelper);
-            var expr = _regexNFABuilder.CreateRegexParser("TestRegexCompile");
-            _regexCompiler = expr.Compile();
+            //_regexNFABuilder = new RegexCharNFABuilder(_expressionHelper);
+            //var expr = _regexNFABuilder.CreateRegexParser("TestRegexCompile");
+            //_regexCompiler = expr.Compile();
 
             _classifierGen = new TerminalClassifier<char>(_expressionHelper);
             // Terminals with no associated parse value.
 
             // Whitespace
+            /*
             _whitespace = new Terminal<char>
             {
                 Name = "Whitespace",
@@ -67,6 +68,7 @@ namespace ParsingTests
             _exponent = new Terminal<char> { Name = "Exponent", InitialState = _regexCompiler(@"\^") };
             _openParen = new Terminal<char> { Name = "OpenParen", InitialState = _regexCompiler(@"\(") };
             _closeParen = new Terminal<char> { Name = "CloseParen", InitialState = _regexCompiler(@"\)") };
+             */
         }
 
         enum TokenType
@@ -321,7 +323,7 @@ namespace ParsingTests
                 si.CurrentNonTerminalValue);
         }
 
-        
+        /*
 
         [Test]
         public void TestRegexCompile1()
@@ -426,6 +428,7 @@ namespace ParsingTests
             Assert.IsTrue(f(new TestStringInput("143")));
         }
 
+        
         [Test]
         public void TestRegexCompile8()
         {
@@ -536,6 +539,7 @@ namespace ParsingTests
             Assert.AreEqual(0, f(si));
             Assert.AreEqual(18.0, si.CurrentNonTerminalValue);
         }
+         */
     }
-    */
+    
 }

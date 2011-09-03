@@ -17,7 +17,12 @@ namespace Framework.Parsing
         /// <summary>
         /// A set of characters that this transition matches
         /// </summary>
-        public ISet<TChar> CharactersMatched { get; set; }
+        public ISet<TChar> Characters { get; set; }
+
+        /// <summary>
+        ///  True iff the characters set should be interpreted as the set of characters *not* to match.
+        /// </summary>
+        public bool MatchAllExcept { get; set; }
 
         // TODO: Define a lambda that gets executed whenever this transition is taken, and have the Classifier generator create code to execute it.
         /// <summary>

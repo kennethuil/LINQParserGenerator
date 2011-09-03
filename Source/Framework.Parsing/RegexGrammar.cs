@@ -7,7 +7,7 @@ using System.Text;
 
 namespace Framework.Parsing
 {
-    /*
+    
     public class RegexGrammar<TValue> : Grammar<char>
     {
         private static HashSet<char> AllCharacters()
@@ -31,10 +31,10 @@ namespace Framework.Parsing
 
         private static readonly ISet<char> _matchBackslash =
             new HashSet<char> { '\\' };
-        private static readonly ISet<char> _matchSingleCharEscapeChar =
+        //private static readonly ISet<char> _matchSingleCharEscapeChar =
             //(c) => !(c == 'w' ||
             //                c == 's' || c == 'S' || c == 'd' || c == 'D');
-            new HashSet<char>(AllCharacters().Except(new HashSet<char> { 'w', 's', 'S', 'd', 'D' }));
+        //    new HashSet<char>(AllCharacters().Except(new HashSet<char> { 'w', 's', 'S', 'd', 'D' }));
 
         private static readonly ISet<char> _matchCharClassEscapeChar =
             new HashSet<char> {'w', 's', 'S', 'd', 'D'};
@@ -72,10 +72,10 @@ namespace Framework.Parsing
             new HashSet<char> { '*'};
         private static readonly ISet<char> _matchPipe =
             new HashSet<char> { '|'};
-        private static readonly ISet<char> _matchAny =
-            AllCharacters();
-        private static readonly ISet<char> _matchNonControlChar =
-            AllCharactersExcept('\"', '\\', '[', ']', '(', ')', '?', '+', '*', '-', '^', '|', '-');
+        //private static readonly ISet<char> _matchAny =
+        //    AllCharacters();
+        //private static readonly ISet<char> _matchNonControlChar =
+        //    AllCharactersExcept('\"', '\\', '[', ']', '(', ')', '?', '+', '*', '-', '^', '|', '-');
             //(c) => c != '\"' && c != '\\' && c != '[' && c != ']' && c != '(' && c != ')' && c != '?' && c != '+' && c != '*' && c != '-' && c != '^' && c != '|'
             //&& c != '-';
 
@@ -134,14 +134,14 @@ namespace Framework.Parsing
         public GrammarRule<IList<TValue>,TValue, IList<TValue>> SelectCharListAppendRule { get; private set; }
         public GrammarRule<TValue, IList<TValue>> SelectCharListSingleonRule { get; private set; }
 
-        //static Terminal<char> MatchLiteral(string terminalName, string str)
-        //{
-        //    return new Terminal<char>
-        //    {
-        //        InitialState = RegexCharNFABuilder.GetLiteralMatcher(str),
-        //        Name = terminalName
-        //    };
-        //}
+        static Terminal<char> MatchLiteral(string terminalName, string str)
+        {
+            return new Terminal<char>
+            {
+                InitialState = TerminalClassifier<char>.GetLiteralMatcher(str),
+                Name = terminalName
+            };
+        }
 
         static Terminal<char, TValue> MatchCapturingCharSequence(string terminalName, 
             params ISet<char>[] charMatches)
@@ -161,23 +161,24 @@ namespace Framework.Parsing
 
         public RegexGrammar()
         {
-            SingleCharEscape = MatchCapturingCharSequence("SingleCharEscape", _matchBackslash, _matchSingleCharEscapeChar);
+            // TODO: Put these escapes back when we fix the large set problem.
+            //SingleCharEscape = MatchCapturingCharSequence("SingleCharEscape", _matchBackslash, _matchSingleCharEscapeChar);
             CharClassEscape = MatchCapturingCharSequence("CharClassEscape", _matchBackslash, _matchCharClassEscapeChar);
             // TODO: Hex & Unicode escape
-            OtherChar = MatchCapturingCharSequence("OtherChar", _matchNonControlChar);
+            //OtherChar = MatchCapturingCharSequence("OtherChar", _matchNonControlChar);
 
-            //var openNonCapturing = MatchLiteral("OpenNonCapturing", "(?:");
-            //var openParen = MatchLiteral("OpenParen", "(");
-            //var closeParen = MatchLiteral("CloseParen", ")");
-            //var openBracket = MatchLiteral("OpenBracket", "[");
-            //var openBracketCaret = MatchLiteral("OpenBracketCaret", "[^");
-            //var closeBracket = MatchLiteral("CloseBracket", "]");
+            var openNonCapturing = MatchLiteral("OpenNonCapturing", "(?:");
+            var openParen = MatchLiteral("OpenParen", "(");
+            var closeParen = MatchLiteral("CloseParen", ")");
+            var openBracket = MatchLiteral("OpenBracket", "[");
+            var openBracketCaret = MatchLiteral("OpenBracketCaret", "[^");
+            var closeBracket = MatchLiteral("CloseBracket", "]");
 
-            //var star = MatchLiteral("Star", "*");
-            //var plus = MatchLiteral("Plus", "+");
-            //var question = MatchLiteral("Question", "?");
-            //var dash = MatchLiteral("Dash", "-");
-            //var pipe = MatchLiteral("Pipe", "|");
+            var star = MatchLiteral("Star", "*");
+            var plus = MatchLiteral("Plus", "+");
+            var question = MatchLiteral("Question", "?");
+            var dash = MatchLiteral("Dash", "-");
+            var pipe = MatchLiteral("Pipe", "|");
 
             // NonTerminals.
             SpecificChar = new NonTerminal<TValue> { Name = "SpecificChar" };
@@ -230,5 +231,5 @@ namespace Framework.Parsing
         }
 
     }
-     */
+     
 }

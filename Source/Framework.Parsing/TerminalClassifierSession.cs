@@ -228,7 +228,7 @@ namespace Framework.Parsing
 
                 // On a character transition, consume the character and jump to the next state.
                 if (!transition.MatchEof)
-                    cases.Add(Expression.SwitchCase(Expression.Block(all), from x in transition.CharactersMatched select Expression.Constant(x)));
+                    cases.Add(Expression.SwitchCase(Expression.Block(all), from x in transition.Characters select Expression.Constant(x)));
                 //jumps.Add(Expression.IfThen(Expression.Invoke(transition.CharacterMatchExpression, expCh),
                 //    Expression.Block(all)));
                 else
