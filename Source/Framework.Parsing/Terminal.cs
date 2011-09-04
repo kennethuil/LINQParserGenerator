@@ -52,6 +52,12 @@ namespace Framework.Parsing
             }
         }
 
+        public Expression<Func<TValue>> NonCapturingAction
+        {
+            get { return (Expression<Func<TValue>>)base.Action; }
+            set { base.Action = value; }
+        }
+
         public override Type ValueType
         {
             get

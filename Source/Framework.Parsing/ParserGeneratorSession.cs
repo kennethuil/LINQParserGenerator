@@ -462,7 +462,11 @@ namespace Framework.Parsing
                     Expression expValue = null;
                     if (term.Action != null)
                     {
-                        if (term.Action.Parameters.Count() == 1)
+                        if (term.Action.Parameters.Count() == 0)
+                        {
+                            expValue = Expression.Invoke(term.Action);
+                        }
+                        else if (term.Action.Parameters.Count() == 1)
                         {
                             expTerminalString = Expression.Parameter(term.Action.Parameters[0].Type);
                             expValue = Expression.Invoke(term.Action, expTerminalString);
@@ -484,13 +488,16 @@ namespace Framework.Parsing
                     // In any case, it needs to return the terminal number assigned to this terminal.
                     if (expValue != null)
                     {
-                        
+                        List<ParameterExpression> handlerParams = new List<ParameterExpression> { expParserState };
+                        if (expTerminalString != null)
+                            handlerParams.Add(expTerminalString);
+
                         classifier.AddTerminalHandler(term,
                                                       Expression.Lambda(
                                                           Expression.Block(
                                                               Expression.Invoke(SetTerminalValueExpr(expValue.Type), expParserState, expValue),
                                                               Expression.Invoke(SetTerminal, expParserState, Expression.Constant(terminalNumber)),
-                                                              Expression.Constant(terminalNumber)), true, expParserState, expTerminalString));
+                                                              Expression.Constant(terminalNumber)), true, handlerParams));
                     }
                     else if (term != Eof<TChar>.Instance)
                         classifier.AddTerminalHandler(term,
