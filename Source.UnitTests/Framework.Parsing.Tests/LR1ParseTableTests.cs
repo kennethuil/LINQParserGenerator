@@ -30,7 +30,7 @@ namespace ParsingTests
         TerminalClassifier<char> _classifierGen;
         IExpressionHelper _expressionHelper;
         Func<string, FiniteAutomatonState<char>> _regexCompiler;
-        //RegexCharNFABuilder _regexNFABuilder;
+        RegexCharNFABuilder _regexNFABuilder;
 
         Terminal<char> GetNumberTerminal<T>(Expression<Func<string,T>> action)
         {
@@ -44,15 +44,15 @@ namespace ParsingTests
         {
             _expressionHelper = new ExpressionHelper();
 
-            //_regexNFABuilder = new RegexCharNFABuilder(_expressionHelper);
-            //var expr = _regexNFABuilder.CreateRegexParser("TestRegexCompile");
-            //_regexCompiler = expr.Compile();
+            _regexNFABuilder = new RegexCharNFABuilder(_expressionHelper);
+            var expr = _regexNFABuilder.CreateRegexParser("TestRegexCompile");
+            _regexCompiler = expr.Compile();
 
             _classifierGen = new TerminalClassifier<char>(_expressionHelper);
             // Terminals with no associated parse value.
 
             // Whitespace
-            /*
+
             _whitespace = new Terminal<char>
             {
                 Name = "Whitespace",
@@ -68,7 +68,7 @@ namespace ParsingTests
             _exponent = new Terminal<char> { Name = "Exponent", InitialState = _regexCompiler(@"\^") };
             _openParen = new Terminal<char> { Name = "OpenParen", InitialState = _regexCompiler(@"\(") };
             _closeParen = new Terminal<char> { Name = "CloseParen", InitialState = _regexCompiler(@"\)") };
-             */
+
         }
 
         enum TokenType
@@ -349,12 +349,14 @@ namespace ParsingTests
             si = new ParseState<object>(@"[^A-Za-z0-9_]");
             Assert.AreEqual(0, f(si));
             Assert.AreEqual("Regex(SelectNotChar(SelectRange(A, Z), SelectRange(a, z), SelectRange(0, 9), _))", si.CurrentNonTerminalValue);
-            //si = new ParseState<string>(@"[^\:]*://(\d+\.\d+\.\d+\.\d+)(?:\:[^/]*)?/([^/?]*).*");
+
+            si = new ParseState<object>(@"\s\w\d\S\W\D");
+            Assert.AreEqual(0, f(si));
             // TODO: Inside of a [] or [^] construct, we need to take just about any character that's
             // not a ] literally.
         }
 
-        /*
+
 
         [Test]
         public void TestRegexCompile1()
@@ -468,8 +470,6 @@ namespace ParsingTests
 
             var t8 = new Terminal<char> { Name = "T8", InitialState = regexCompiler(@"[^x]yz") };
 
-            // TODO: There's got to be a better way to package this up.
-            _regexNFABuilder.SetupImplies(classifier.Parent);
 
 
             var f = classifier.Generate(new Dictionary<Terminal<char>, Expression<Func<TestStringInput, bool>>> { { t8, x => true } })
@@ -570,7 +570,6 @@ namespace ParsingTests
             Assert.AreEqual(0, f(si));
             Assert.AreEqual(18.0, si.CurrentNonTerminalValue);
         }
-         */
     }
     
 }

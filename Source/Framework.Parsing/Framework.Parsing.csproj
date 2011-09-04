@@ -66,7 +66,8 @@
     <Compile Include="ParserGeneratorSession.cs" />
     <Compile Include="RegexCharNFABuilder.cs" />
     <Compile Include="RegexGrammar.cs" />
-    <Compile Include="RegexNFABuilderGen.cs" />
+    <Compile Include="RegexNFABuilder.cs" />
+    <Compile Include="RegexNFABuilderSupport.cs" />
     <Compile Include="StringInput.cs" />
     <Compile Include="TerminalClassifier.cs" />
     <Compile Include="TerminalClassifierSession.cs" />

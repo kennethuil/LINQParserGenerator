@@ -173,7 +173,9 @@ namespace Framework.Parsing
             Terminal<TChar> term, IDictionary<Terminal<TChar>, int> allTerminals)
         {
             // Generate code to represent a "shift" action
-            bool hasValue = classifier.IsCapturing(term);
+            //bool hasValue = classifier.IsCapturing(term);
+            bool hasValue = term.ValueType != null && term.ValueType != typeof(void);
+
             return hasValue ? GenerateShiftWithValue(classifier, targetState, callTarget, stateParam, depthParam, stackValueParams,
                 term, allTerminals)
                 : GenerateShiftWithoutValue(classifier, targetState, callTarget, stateParam, depthParam, stackValueParams,

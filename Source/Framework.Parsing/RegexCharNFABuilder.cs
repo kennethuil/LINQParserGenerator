@@ -8,68 +8,187 @@ using Framework.CodeGen;
 
 namespace Framework.Parsing
 {
+    public class RegexCharNFABuilder : RegexNFABuilder<char>
+    {
+        public RegexCharNFABuilder(IExpressionHelper expressionHelper) : base(expressionHelper)
+        {
+        }
+
+        public static NFAFragment<char> SpecificChar(char ch)
+        {
+            var end = new FiniteAutomatonState<char>
+            {
+            };
+            return new NFAFragment<char>
+            {
+                Begin = new FiniteAutomatonState<char>
+                {
+                    Transitions = new[] {
+                        new FiniteAutomatonStateTransition<char> {
+                            Target = end,
+                            Characters = new HashSet<char> {ch}
+                        }
+                    }
+                },
+                End = end
+            };
+        }
+
+        public static NFAFragment<char> WordChar()
+        {
+            var end = new FiniteAutomatonState<char>
+            {
+            };
+            return new NFAFragment<char>
+            {
+                Begin = new FiniteAutomatonState<char>
+                {
+                    Transitions = new[] {
+                        new FiniteAutomatonStateTransition<char> {
+                            Target = end,
+                            Characters = Utilities.Union(Utilities.AllLetters(), Utilities.AllDigits())
+                        }
+                    }
+                },
+                End = end
+            };  
+        }
+
+        public static NFAFragment<char> NonWordChar()
+        {
+            var frag = WordChar();
+            frag.Begin.Transitions.First().MatchAllExcept = true;
+            return frag;
+        }
+
+        public static NFAFragment<char> Digit()
+        {
+            var end = new FiniteAutomatonState<char>
+            {
+            };
+            return new NFAFragment<char>
+            {
+                Begin = new FiniteAutomatonState<char>
+                {
+                    Transitions = new[] {
+                        new FiniteAutomatonStateTransition<char> {
+                            Target = end,
+                            Characters = Utilities.AllDigits()
+                        }
+                    }
+                },
+                End = end
+            };  
+        }
+
+        public static NFAFragment<char> NonDigit()
+        {
+            var frag = Digit();
+            frag.Begin.Transitions.First().MatchAllExcept = true;
+            return frag;
+        }
+
+        public static NFAFragment<char> Whitespace()
+        {
+            var end = new FiniteAutomatonState<char>
+            {
+            };
+            return new NFAFragment<char>
+            {
+                Begin = new FiniteAutomatonState<char>
+                {
+                    Transitions = new[] {
+                        new FiniteAutomatonStateTransition<char> {
+                            Target = end,
+                            Characters = Utilities.AllWhitespace()
+                        }
+                    }
+                },
+                End = end
+            };  
+        }
+
+        public static NFAFragment<char> NonWhitespace()
+        {
+            var frag = Whitespace();
+            frag.Begin.Transitions.First().MatchAllExcept = true;
+            return frag;
+        }
+
+        public static NFAFragment<char> Range(char lower, char upper)
+        {
+            var end = new FiniteAutomatonState<char>
+            {
+            };
+            HashSet<char> chars = new HashSet<char>();
+            char ch;
+
+            // Loop to fill all but upper, then add upper separately.
+            // That way, having upper == char.MaxValue won't cause an infinite loop.
+            for (ch = lower; ch < upper; ++ch)
+                chars.Add(ch);
+            chars.Add(upper);
+            
+            return new NFAFragment<char>
+            {
+                Begin = new FiniteAutomatonState<char>
+                {
+                    Transitions = new[] {
+                        new FiniteAutomatonStateTransition<char> {
+                            Target = end,
+                            Characters = chars
+                        }
+                    }
+                },
+                End = end
+            }; 
+        }
+
+        public override Expression<Func<char, NFAFragment<char>>> GetSpecificCharFragmentExpression()
+        {
+            return (c) => SpecificChar(c);
+        }
+
+        public override Expression<Func<NFAFragment<char>>> GetWordCharFragmentExpression()
+        {
+            return () => WordChar();
+        }
+
+        public override Expression<Func<NFAFragment<char>>> GetNonWordCharFragmentExpression()
+        {
+            return () => NonWordChar();
+        }
+
+        public override Expression<Func<NFAFragment<char>>> GetWhitespaceFragmentExpression()
+        {
+            return () => Whitespace();
+        }
+
+        public override Expression<Func<NFAFragment<char>>> GetNonWhitespaceFragmentExpression()
+        {
+            return () => NonWhitespace();
+        }
+
+        public override Expression<Func<NFAFragment<char>>> GetDigitFragmentExpression()
+        {
+            return () => Digit();
+        }
+
+        public override Expression<Func<NFAFragment<char>>> GetNonDigitFragmentExpression()
+        {
+            return () => NonDigit();
+        }
+
+        public override Expression<Func<char, char, NFAFragment<char>>> GetRangeFragmentExpression()
+        {
+            return (lower, upper) => Range(lower, upper);
+        }
+    }
+
     /*
     public class RegexCharNFABuilder : RegexNFABuilderGen
     {
-        static ISet<char> _any = AllCharacters();
-        static ISet<char> _digit = new HashSet<char> { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' };
-        static ISet<char> _notDigit = Except(_any, _digit);
-        static ISet<char> _letter = AllLetters();
-        static ISet<char> _word = Union(_digit, _letter);
-        static ISet<char> _notWord = Except(_any, _word);
-        static ISet<char> _whitespace = new HashSet<char> { '\t', '\r', '\n', ' ' };
-        static ISet<char> _notWhitespace = Except(_any, _whitespace);
 
-
-        private static HashSet<char> AllLetters()
-        {
-            char ch;
-            HashSet<char> result = new HashSet<char>();
-            for (ch = 'A'; ch <= 'Z'; ++ch)
-            {
-                result.Add(ch);
-            }
-            for (ch = 'a'; ch <= 'z'; ++ch)
-            {
-                result.Add(ch);
-            }
-            return result;
-        }
-
-
-
-        private static HashSet<char> AllCharacters()
-        {
-            char ch = '\x0000';
-            HashSet<char> result = new HashSet<char>();
-            do
-            {
-                result.Add(ch);
-                ++ch;
-            } while (ch != '\x0000');
-            return result;
-        }
-
-         private static ISet<char> Except(ISet<char> first, ISet<char> second)
-        {
-            HashSet<char> result = new HashSet<char>(first);
-            result.ExceptWith(second);
-            return result;
-        }
-
-        private static ISet<char> Union(ISet<char> first, ISet<char> second)
-        {
-            HashSet<char> result = new HashSet<char>(first);
-            result.UnionWith(second);
-            return result;
-        }
-
-        private static ISet<char> Intersect(ISet<char> first, ISet<char> second)
-        {
-            HashSet<char> result = new HashSet<char>(first);
-            result.IntersectWith(second);
-            return result;
-        }
 
 
         public class NFAConversionState : StringInput
@@ -91,55 +210,7 @@ namespace Framework.Parsing
         {
         }
 
-        /*
-        public void SetupImplies(TerminalClassifier<char> classifier)
-        {
-            classifier.AddImplies(_word, _any);
-            classifier.AddImplies(_notWord, _any);
-            classifier.AddImplies(_whitespace, _any);
-            classifier.AddImplies(_notWhitespace, _any);
-            classifier.AddImplies(_digit, _any);
-            classifier.AddImplies(_notDigit, _any);
 
-            classifier.AddImplies(_word, _notWhitespace);
-            classifier.AddImplies(_whitespace, _notWord);
-            classifier.AddImplies(_whitespace, _notDigit);
-            classifier.AddImplies(_digit, _notWhitespace);
-            classifier.AddImplies(_notWord, _notDigit);
-
-            foreach (var entry in _specificCharExpr)
-            {
-                if (char.IsLetterOrDigit(entry.Key))
-                {
-                    classifier.AddImplies(entry.Value, _word);
-                    classifier.AddImplies(entry.Value, _notWhitespace);
-                }
-                else
-                {
-                    classifier.AddImplies(entry.Value, _notWord);
-                    classifier.AddImplies(entry.Value, _notDigit);
-                }
-                if (char.IsDigit(entry.Key))
-                {
-                    classifier.AddImplies(entry.Value, _digit);
-                    classifier.AddImplies(entry.Value, _word);
-                    classifier.AddImplies(entry.Value, _notWhitespace);
-                }
-                else
-                {
-                    classifier.AddImplies(entry.Value, _notDigit);
-                }
-                if (char.IsWhiteSpace(entry.Key))
-                {
-                    classifier.AddImplies(entry.Value, _whitespace);
-                }
-                else
-                {
-                    classifier.AddImplies(entry.Value, _notWhitespace);
-                }
-                classifier.AddImplies(entry.Value, _any);
-            }
-        }
         
         public static FiniteAutomatonState<char> GetLiteralMatcher(string literal)
         {
@@ -169,7 +240,6 @@ namespace Framework.Parsing
 
         public static ISet<char> SpecificCharMatchExpr(char ch)
         {
-            /*
             Expression<Func<char, bool>> expr;
             if (_specificCharExpr.TryGetValue(ch, out expr))
                 return expr;
@@ -358,7 +428,7 @@ namespace Framework.Parsing
             return converter;
         }
      
-
+    
     }
-     */
+    */
 }
