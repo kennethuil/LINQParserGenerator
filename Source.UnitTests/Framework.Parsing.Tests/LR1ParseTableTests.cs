@@ -336,24 +336,22 @@ namespace ParsingTests
             Assert.AreEqual(0, f(si));
             Assert.AreEqual("Regex(Concat(Concat(ZeroOrMore(SelectChar(1, 2, 3)), OneOrMore(4)), \"))",
                 si.CurrentNonTerminalValue);
+
+            si = new ParseState<object>(@"[^\:][a-z]+");
+            Assert.AreEqual(0, f(si));
+            Assert.AreEqual("Regex(Concat(SelectNotChar(:), OneOrMore(SelectRange(a, z))))", si.CurrentNonTerminalValue);
+
+            si = new ParseState<object>(@"[A-Za-z][A-Za-z0-9]*");
+            Assert.AreEqual(0, f(si));
+            Assert.AreEqual("Regex(Concat(SelectChar(SelectRange(A, Z), SelectRange(a, z)), ZeroOrMore(SelectChar(SelectRange(A, Z), SelectRange(a, z), SelectRange(0, 9)))))",
+                si.CurrentNonTerminalValue);
+
+            si = new ParseState<object>(@"[^A-Za-z0-9_]");
+            Assert.AreEqual(0, f(si));
+            Assert.AreEqual("Regex(SelectNotChar(SelectRange(A, Z), SelectRange(a, z), SelectRange(0, 9), _))", si.CurrentNonTerminalValue);
             //si = new ParseState<string>(@"[^\:]*://(\d+\.\d+\.\d+\.\d+)(?:\:[^/]*)?/([^/?]*).*");
             // TODO: Inside of a [] or [^] construct, we need to take just about any character that's
-            // not a ] literally.  Also, we need to support [a-bc-d]
-            /*
-            si = new ParseState<object>(@"[^\:]*://(\d+\.\d+\.\d+\.\d+)(?:\:[^/]*)?/([^/\?]*)");
-            Assert.AreEqual(0, f(si));
-            Assert.AreEqual("Regex(Concat(Concat(Concat(Concat(Concat(Concat(Concat(ZeroOrMore(SelectNotChar(:)), :), /), /), Concat(Concat(Concat(Concat(Concat(Concat(OneOrMore(\\d), .), OneOrMore(\\d)), .), OneOrMore(\\d)), .), OneOrMore(\\d))Capture(Concat(Concat(Concat(Concat(Concat(Concat(OneOrMore(\\d), .), OneOrMore(\\d)), .), OneOrMore(\\d)), .), OneOrMore(\\d)))), ZeroOrOne(Concat(:, ZeroOrMore(SelectNotChar(/))))), /), ZeroOrMore(SelectNotChar(/, \\?))Capture(ZeroOrMore(SelectNotChar(/, \\?)))))", si.CurrentNonTerminalValue);
-
-            si = new ParseState<object>("[a-z]|[A-Z](?:[a-z]|[A-Z]|[0-9])*");
-            Assert.AreEqual(0, f(si));
-            Assert.AreEqual("Regex(Concat(Alternate(SelectRange(a, z), SelectRange(A, Z)), ZeroOrMore(Alternate(Alternate(SelectRange(a, z), SelectRange(A, Z)), SelectRange(0, 9)))))",
-                si.CurrentNonTerminalValue);
-
-            si = new ParseState<object>("[a-zA-z](?:[a-zA-z0-9_])*");
-            Assert.AreEqual(0, f(si));
-            Assert.AreEqual("Regex(Concat(SelectChar(SelectRange(a, z), SelectRange(A, z)), ZeroOrMore(SelectChar(SelectRange(a, z), SelectRange(A, z), SelectRange(0, 9), _))))",
-                si.CurrentNonTerminalValue);
-             */
+            // not a ] literally.
         }
 
         /*
