@@ -7,6 +7,7 @@ using System.Reflection;
 using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
 using System.Text;
+using ExpressionTests;
 using Framework.CodeGen;
 
 
@@ -17,7 +18,8 @@ namespace Framework.Parsing
         ParserGenerator<TChar> _parserGenerator;
         IExpressionHelper _expressionHelper;
         protected bool _includeSymbols;
-        
+        Dictionary<ISet<Terminal<TChar>>, MethodInfo> _terminalReaders = new Dictionary<ISet<Terminal<TChar>>, MethodInfo>();
+
         public ParserGeneratorSession(ParserGenerator<TChar> pg, IExpressionHelper expressionHelper)
         {
             _parserGenerator = pg;
@@ -126,8 +128,29 @@ namespace Framework.Parsing
             return this;
         }
 
-        private InvocationExpression GetReadTerminal(Expression stateParam, TerminalClassifierSession<TChar> classifier, IDictionary<Terminal<TChar>, int> allTerminals, LRParseState<TChar> targetState)
+        private Expression GetReadTerminal(Expression stateParam, 
+            TerminalClassifierSession<TChar> classifier, 
+            IDictionary<Terminal<TChar>, int> allTerminals, 
+            LRParseState<TChar> targetState,
+            TypeBuilder parserType)
         {
+            if (parserType != null)
+            {
+                var possibleTerminals = _parserGenerator.GetPossibleTerminals(allTerminals, targetState);
+                MethodInfo method;
+                if (!_terminalReaders.TryGetValue(possibleTerminals, out method))
+                {
+                    var code = classifier.Generate(possibleTerminals);
+                    var mbwrap = new MethodBuilderWrap(parserType, "ScanToken" + _terminalReaders.Count, MethodAttributes.Static | MethodAttributes.Public,
+                        typeof(int), stateParam.Type);
+                    var mb = mbwrap.GetMethodBuilder();
+                    code.CompileToMethod(mb);
+                    method = mbwrap;
+                    _terminalReaders.Add(possibleTerminals, method);
+                }
+                
+                return Expression.Call(method, stateParam);
+            }
             return Expression.Invoke(classifier.Generate(_parserGenerator.GetPossibleTerminals(allTerminals, targetState)), stateParam);
         }
 
@@ -146,13 +169,13 @@ namespace Framework.Parsing
         }
 
         Expression GenerateShiftWithValue(TerminalClassifierSession<TChar> classifier, LRParseState<TChar> targetState, MethodInfo callTarget, Expression stateParam, Expression depthParam, ParameterExpression[] stackValueParams,
-            Terminal<TChar> term, IDictionary<Terminal<TChar>, int> allTerminals)
+            Terminal<TChar> term, IDictionary<Terminal<TChar>, int> allTerminals, TypeBuilder parserTypeBuilder)
         {
             // Generate code to represent a "shift" action where the terminal has an associated value.  The terminal's value is pushed onto the value stack.
             var expTermValue = Expression.Parameter(term.ValueType);
 
             var termValueAssign = Expression.Assign(expTermValue, Expression.Invoke(this.GetTerminalValueExpr(term.ValueType), stateParam));
-            var readTerminal = GetReadTerminal(stateParam, classifier, allTerminals, targetState);
+            var readTerminal = GetReadTerminal(stateParam, classifier, allTerminals, targetState, parserTypeBuilder);
 
             var result = Expression.Call(callTarget, GetOutgoingParamList(stateParam, depthParam, stackValueParams, expTermValue));
             return Expression.Block(
@@ -161,25 +184,25 @@ namespace Framework.Parsing
         }
 
         Expression GenerateShiftWithoutValue(TerminalClassifierSession<TChar> classifier, LRParseState<TChar> targetState, MethodInfo callTarget, Expression stateParam, Expression depthParam, ParameterExpression[] stackValueParams,
-            Terminal<TChar> term, IDictionary<Terminal<TChar>, int> allTerminals)
+            Terminal<TChar> term, IDictionary<Terminal<TChar>, int> allTerminals, TypeBuilder parserTypeBuilder)
         {
             // Generate code to represent a "shift" action where the terminal does not have an associated value.  The value stack remains unchanged.
-            var readTerminal = GetReadTerminal(stateParam, classifier, allTerminals, targetState);
+            var readTerminal = GetReadTerminal(stateParam, classifier, allTerminals, targetState, parserTypeBuilder);
             var result = Expression.Call(callTarget, GetOutgoingParamList(stateParam, depthParam, stackValueParams, null));
             return Expression.Block(readTerminal, result);
         }
 
         Expression GenerateShift(TerminalClassifierSession<TChar> classifier, LRParseState<TChar> targetState, MethodInfo callTarget, Expression stateParam, Expression depthParam, ParameterExpression[] stackValueParams,
-            Terminal<TChar> term, IDictionary<Terminal<TChar>, int> allTerminals)
+            Terminal<TChar> term, IDictionary<Terminal<TChar>, int> allTerminals, TypeBuilder parserTypeBuilder)
         {
             // Generate code to represent a "shift" action
             //bool hasValue = classifier.IsCapturing(term);
             bool hasValue = term.ValueType != null && term.ValueType != typeof(void);
 
             return hasValue ? GenerateShiftWithValue(classifier, targetState, callTarget, stateParam, depthParam, stackValueParams,
-                term, allTerminals)
+                term, allTerminals, parserTypeBuilder)
                 : GenerateShiftWithoutValue(classifier, targetState, callTarget, stateParam, depthParam, stackValueParams,
-                term, allTerminals);
+                term, allTerminals, parserTypeBuilder);
         }
 
         Expression GenerateReduce(Expression stateParam, Expression depthParam, ParameterExpression[] stackValueParams,
@@ -242,7 +265,8 @@ namespace Framework.Parsing
             IDictionary<LRParseState<TChar>, MethodInfo> callTargets,
             TerminalClassifierSession<TChar> classifier,
             IDictionary<Terminal<TChar>, int> allTerminals,
-            IDictionary<NonTerminal, int> allNonTerminals)
+            IDictionary<NonTerminal, int> allNonTerminals,
+            TypeBuilder parserTypeBuilder)
         {
             // A state method takes as parameters the parser state, current parser stack depth, and the value stack, and returns the stack depth that the
             // parsing stack frame should have after this state's reductions and gotos are done.
@@ -281,7 +305,7 @@ namespace Framework.Parsing
                     var targetState = ((ShiftAction<TChar>)action).TargetState;
                     var callTarget = callTargets[targetState];
                     var shift = GenerateShift(classifier, targetState, callTarget, stateParam, depthParam, stackParams,
-                        term, allTerminals);
+                        term, allTerminals, parserTypeBuilder);
 
                     cases.Add(Expression.SwitchCase(shift, Expression.Constant(termNumber)));
                 }
@@ -550,7 +574,7 @@ namespace Framework.Parsing
             foreach (var state in parseTable.States)
             {
                 var methodBuilder = stateMethodBuilders[state];
-                GenerateState(methodBuilder, numValueParams, state, stateMethodCallTargets, classifier, allTerminals, allNonTerminals);
+                GenerateState(methodBuilder, numValueParams, state, stateMethodCallTargets, classifier, allTerminals, allNonTerminals, parserTypeBuilder);
             }
 
             // Now to build the lambda that kicks off the entire parsing process.
@@ -558,7 +582,7 @@ namespace Framework.Parsing
             var startMethod = stateMethodCallTargets[parseTable.States.First()];
 
             // Read the first terminal
-            var shift = GetReadTerminal(expParserState, classifier, allTerminals, parseTable.States.First());
+            var shift = GetReadTerminal(expParserState, classifier, allTerminals, parseTable.States.First(), null);
             // Call the state method for the state state.  Start with a depth of one.  Then depth 0 or -1 should then cause the start state method to
             // return here.
             var start = Expression.Call(startMethod, new Expression[] {expParserState, Expression.Constant(1)}.Concat(
