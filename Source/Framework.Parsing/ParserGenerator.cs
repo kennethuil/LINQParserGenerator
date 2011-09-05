@@ -28,7 +28,13 @@ namespace Framework.Parsing
         {
             // TODO: Trace the actual set of possible terminals
             var result = new HashableSet<Terminal<TChar>>();
-            result.UnionWith(allTerminals.Keys.Except(new[] {Eof<TChar>.Instance}));
+            foreach (var entry in nextState.Actions)
+            {
+                var term = entry.Key;
+                if (term != Eof<TChar>.Instance)
+                    result.Add(term);
+            }
+
             return result;
         }
 

@@ -424,16 +424,14 @@ namespace Framework.Parsing
 
             classifier = classifier.CreateWithNewResultType(typeof(int));
 
-            // Set up the method builders that we'll populate with lambdas.  They have to call each other mutually recursively, so
-            // we have to create a separate type with passthrough calls back to the MethodBuilders, since lambda expression trees
-            // can't refer to method builders (as of .NET 4)
+            // Set up the method builders that we'll populate with lambdas.  They have to call each other mutually recursively, so they
+            // all need to exist before we actually populate any of them.
             IDictionary<LRParseState<TChar>, MethodBuilder> stateMethodBuilders = new Dictionary<LRParseState<TChar>, MethodBuilder>();
             IDictionary<LRParseState<TChar>, MethodInfo> stateMethodCallTargets = new Dictionary<LRParseState<TChar>, MethodInfo>();
             int i = 0;
 
             // A table of terminals to unique terminal numbers, for use in state method switch statements.
             IDictionary<Terminal<TChar>, int> allTerminals = new Dictionary<Terminal<TChar>, int>();
-            
 
             // A table of nonterminals to unique nonterminal numbers, for use in state method switch statements.
             IDictionary<NonTerminal, int> allNonTerminals = new Dictionary<NonTerminal, int>();
@@ -556,9 +554,10 @@ namespace Framework.Parsing
                 }
             }
 
-            // Build the passthrough methods so that we have fully baked methods for the state methods to call as needed.
-            // We need one for each state, and each should call the associated state method.
-
+            // Build a passthrough method for the start method so we can have a lambda that calls it compiled
+            // into a delegate or compiled into the parser type as needed.
+            // NOTE: The deal is, you can use a MethodBuilderWrap in a lambda that gets compiled into a MethodBuilder,
+            // but not in a lambda that gets compiled into a delegate.
             
             var passthruTypeBuilder = parserModuleBuilder.DefineType(prefix + "-PassthruCalls", TypeAttributes.Public);
             var startMethodPassthruBuilder = passthruTypeBuilder.DefineMethod("CallStartState", MethodAttributes.Public | MethodAttributes.Static,
@@ -566,26 +565,6 @@ namespace Framework.Parsing
             _expressionHelper.PopulatePassthru(startMethodPassthruBuilder, stateMethodBuilders[parseTable.States.First()], stateParameterTypes.Length);
             var passthruType = passthruTypeBuilder.CreateType();
             var startMethod = passthruType.GetMethod("CallStartState", BindingFlags.Public | BindingFlags.Static);
-
-            /*
-            i = 0;
-            foreach (var state in parseTable.States)
-            {
-                var methodBuilder = passthruTypeBuilder.DefineMethod("CallState" + i, MethodAttributes.Public | MethodAttributes.Static,
-                    typeof(int), stateParameterTypes);
-                _expressionHelper.PopulatePassthru(methodBuilder, stateMethodBuilders[state], stateParameterTypes.Length);
-                ++i;
-            }
-            var passthruType = passthruTypeBuilder.CreateType();
-            
-            i = 0;
-            foreach (var state in parseTable.States)
-            {
-                var method = passthruType.GetMethod("CallState" + i, BindingFlags.Public | BindingFlags.Static);
-                stateMethodCallTargets[state] = method;
-                ++i;
-            }
-            */
 
             // Now we can start generating code for each state method.
             foreach (var state in parseTable.States)
