@@ -10,8 +10,6 @@ using Framework.CodeGen;
 
 namespace Framework.Parsing
 {
-
-
     public class ParserGenerator<TChar> where TChar : IComparable<TChar>, IEquatable<TChar>
     {
         IExpressionHelper _expressionHelper;
@@ -26,7 +24,6 @@ namespace Framework.Parsing
         public ISet<Terminal<TChar>> GetPossibleTerminals(IDictionary<Terminal<TChar>, int> allTerminals,
             LRParseState<TChar> nextState)
         {
-            // TODO: Trace the actual set of possible terminals
             var result = new HashableSet<Terminal<TChar>>();
             foreach (var entry in nextState.Actions)
             {
@@ -34,7 +31,6 @@ namespace Framework.Parsing
                 if (term != Eof<TChar>.Instance)
                     result.Add(term);
             }
-
             return result;
         }
 
