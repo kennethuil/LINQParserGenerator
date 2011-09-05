@@ -464,10 +464,16 @@ namespace Framework.Parsing
             foreach (var state in parseTable.States)
             {
                 // MethodBuilder for the code to handle the state
-                var methodBuilder = parserTypeBuilder.DefineMethod("State" + i, MethodAttributes.Public | MethodAttributes.Static,
+                var methodBuilderWrap = new MethodBuilderWrap(parserTypeBuilder, "State" + i, MethodAttributes.Public | MethodAttributes.Static,
                     typeof(int), stateParameterTypes);
+
+                //var methodBuilder = parserTypeBuilder.DefineMethod("State" + i, MethodAttributes.Public | MethodAttributes.Static,
+                //    typeof(int), stateParameterTypes);
+                var methodBuilder = methodBuilderWrap.GetMethodBuilder();
+
                 ++i;
                 stateMethodBuilders[state] = methodBuilder;
+                stateMethodCallTargets[state] = methodBuilderWrap;
 
                 // Check all the terminals in the state's actions.  If any haven't been processed before,
                 // process them here.
@@ -552,7 +558,16 @@ namespace Framework.Parsing
 
             // Build the passthrough methods so that we have fully baked methods for the state methods to call as needed.
             // We need one for each state, and each should call the associated state method.
+
+            
             var passthruTypeBuilder = parserModuleBuilder.DefineType(prefix + "-PassthruCalls", TypeAttributes.Public);
+            var startMethodPassthruBuilder = passthruTypeBuilder.DefineMethod("CallStartState", MethodAttributes.Public | MethodAttributes.Static,
+                typeof(int), stateParameterTypes);
+            _expressionHelper.PopulatePassthru(startMethodPassthruBuilder, stateMethodBuilders[parseTable.States.First()], stateParameterTypes.Length);
+            var passthruType = passthruTypeBuilder.CreateType();
+            var startMethod = passthruType.GetMethod("CallStartState", BindingFlags.Public | BindingFlags.Static);
+
+            /*
             i = 0;
             foreach (var state in parseTable.States)
             {
@@ -562,6 +577,7 @@ namespace Framework.Parsing
                 ++i;
             }
             var passthruType = passthruTypeBuilder.CreateType();
+            
             i = 0;
             foreach (var state in parseTable.States)
             {
@@ -569,6 +585,7 @@ namespace Framework.Parsing
                 stateMethodCallTargets[state] = method;
                 ++i;
             }
+            */
 
             // Now we can start generating code for each state method.
             foreach (var state in parseTable.States)
@@ -579,11 +596,11 @@ namespace Framework.Parsing
 
             // Now to build the lambda that kicks off the entire parsing process.
             // It needs to read the first terminal, and then call the start state.
-            var startMethod = stateMethodCallTargets[parseTable.States.First()];
+            //var startMethod = stateMethodCallTargets[parseTable.States.First()];
 
             // Read the first terminal
             var shift = GetReadTerminal(expParserState, classifier, allTerminals, parseTable.States.First(), null);
-            // Call the state method for the state state.  Start with a depth of one.  Then depth 0 or -1 should then cause the start state method to
+            // Call the state method for the start state.  Start with a depth of one.  Then depth 0 or -1 should cause the start state method to
             // return here.
             var start = Expression.Call(startMethod, new Expression[] {expParserState, Expression.Constant(1)}.Concat(
                 Enumerable.Repeat(Expression.Constant(null, typeof(object)), numValueParams)));
