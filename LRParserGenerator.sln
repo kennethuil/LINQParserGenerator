@@ -9,6 +9,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Source.UnitTests", "Source.
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ExpressionTests", "ExpressionTests\ExpressionTests.csproj", "{BE161EDD-B39E-4A37-8099-F5482B2BF029}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Framework.Sql", "Framework.Sql\Framework.Sql.csproj", "{D7CC7B1A-1C5B-4E73-B326-7888FA103A9E}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -59,6 +61,16 @@ Global
 		{BE161EDD-B39E-4A37-8099-F5482B2BF029}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
 		{BE161EDD-B39E-4A37-8099-F5482B2BF029}.Release|Mixed Platforms.Build.0 = Release|Any CPU
 		{BE161EDD-B39E-4A37-8099-F5482B2BF029}.Release|x86.ActiveCfg = Release|Any CPU
+		{D7CC7B1A-1C5B-4E73-B326-7888FA103A9E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D7CC7B1A-1C5B-4E73-B326-7888FA103A9E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D7CC7B1A-1C5B-4E73-B326-7888FA103A9E}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
+		{D7CC7B1A-1C5B-4E73-B326-7888FA103A9E}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
+		{D7CC7B1A-1C5B-4E73-B326-7888FA103A9E}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{D7CC7B1A-1C5B-4E73-B326-7888FA103A9E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D7CC7B1A-1C5B-4E73-B326-7888FA103A9E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D7CC7B1A-1C5B-4E73-B326-7888FA103A9E}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{D7CC7B1A-1C5B-4E73-B326-7888FA103A9E}.Release|Mixed Platforms.Build.0 = Release|Any CPU
+		{D7CC7B1A-1C5B-4E73-B326-7888FA103A9E}.Release|x86.ActiveCfg = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

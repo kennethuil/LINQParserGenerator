@@ -128,6 +128,15 @@ namespace Framework.Parsing
             return this;
         }
 
+        /// <summary>
+        /// Returns an Expression that reads the next terminal from the input stream
+        /// </summary>
+        /// <param name="stateParam">An Expression for the parser state object</param>
+        /// <param name="classifier">The classifier generator</param>
+        /// <param name="allTerminals">All the terminals in the grammar</param>
+        /// <param name="targetState">The state that will run immediately after the next terminal is read.</param>
+        /// <param name="parserType">A builder for the parser class.</param>
+        /// <returns></returns>
         private Expression GetReadTerminal(Expression stateParam, 
             TerminalClassifierSession<TChar> classifier, 
             IDictionary<Terminal<TChar>, int> allTerminals, 
@@ -137,6 +146,7 @@ namespace Framework.Parsing
             if (parserType != null)
             {
                 var possibleTerminals = _parserGenerator.GetPossibleTerminals(allTerminals, targetState);
+                // See if there's already a read method for this set of possible terminals.  If not, create a new one.
                 MethodInfo method;
                 if (!_terminalReaders.TryGetValue(possibleTerminals, out method))
                 {
@@ -148,12 +158,22 @@ namespace Framework.Parsing
                     method = mbwrap;
                     _terminalReaders.Add(possibleTerminals, method);
                 }
-                
+                // Put in a call to the read method.
                 return Expression.Call(method, stateParam);
             }
+            // No type builder, so we have nowhere to put the read method.  Inline it here.
+            // NOTE: Don't make a habit of it, or state methods will get rather large.
             return Expression.Invoke(classifier.Generate(_parserGenerator.GetPossibleTerminals(allTerminals, targetState)), stateParam);
         }
 
+        /// <summary>
+        /// Get the list of parameters with which to call the next state.
+        /// </summary>
+        /// <param name="stateParam">An Expression for the parser state object</param>
+        /// <param name="depthParam">An Expression for the parsing depth parameter</param>
+        /// <param name="stackValueParams">Expressions for the current set of stack values</param>
+        /// <param name="expPushedValue">An Expression for the new value to go on the stack, or null if the stack should be unchanged</param>
+        /// <returns>The list of parameters with which to call the next state.</returns>
         IEnumerable<Expression> GetOutgoingParamList(Expression stateParam, Expression depthParam,
             ParameterExpression[] stackValueParams,
             Expression expPushedValue)
@@ -168,6 +188,19 @@ namespace Framework.Parsing
             return new Expression[] { stateParam, Expression.Add(depthParam, Expression.Constant(1)) }.Concat(outgoingStackValues);
         }
 
+        /// <summary>
+        /// Create an expression that represents an LR(1) "shift" operation, in the case where the terminal has an associated value.
+        /// </summary>
+        /// <param name="classifier">The classifier generator</param>
+        /// <param name="targetState">The target state of the shift operation</param>
+        /// <param name="callTarget">The method representing the target state</param>
+        /// <param name="stateParam">An Expression representing the parser state object</param>
+        /// <param name="depthParam">An Expression representing the parse depth</param>
+        /// <param name="stackValueParams">Expressions representing the values on the stack</param>
+        /// <param name="term">The terminal which needs to be matched in order for this shift to take place</param>
+        /// <param name="allTerminals">All terminals in the grammar</param>
+        /// <param name="parserTypeBuilder">The type builder for the parser class</param>
+        /// <returns>An expression that represents an LR(1) "shift" operation</returns>
         Expression GenerateShiftWithValue(TerminalClassifierSession<TChar> classifier, LRParseState<TChar> targetState, MethodInfo callTarget, Expression stateParam, Expression depthParam, ParameterExpression[] stackValueParams,
             Terminal<TChar> term, IDictionary<Terminal<TChar>, int> allTerminals, TypeBuilder parserTypeBuilder)
         {
@@ -183,6 +216,19 @@ namespace Framework.Parsing
                 termValueAssign, readTerminal, result);
         }
 
+        /// <summary>
+        /// Create an expression that represents an LR(1) "shift" operation, in the case where the terminal does not have an associated value.
+        /// </summary>
+        /// <param name="classifier">The classifier generator</param>
+        /// <param name="targetState">The target state of the shift operation</param>
+        /// <param name="callTarget">The method representing the target state</param>
+        /// <param name="stateParam">An Expression representing the parser state object</param>
+        /// <param name="depthParam">An Expression representing the parse depth</param>
+        /// <param name="stackValueParams">Expressions representing the values on the stack</param>
+        /// <param name="term">The terminal which needs to be matched in order for this shift to take place</param>
+        /// <param name="allTerminals">All terminals in the grammar</param>
+        /// <param name="parserTypeBuilder">The type builder for the parser class</param>
+        /// <returns>An expression that represents an LR(1) "shift" operation</returns>
         Expression GenerateShiftWithoutValue(TerminalClassifierSession<TChar> classifier, LRParseState<TChar> targetState, MethodInfo callTarget, Expression stateParam, Expression depthParam, ParameterExpression[] stackValueParams,
             Terminal<TChar> term, IDictionary<Terminal<TChar>, int> allTerminals, TypeBuilder parserTypeBuilder)
         {
@@ -192,6 +238,19 @@ namespace Framework.Parsing
             return Expression.Block(readTerminal, result);
         }
 
+        /// <summary>
+        /// Create an expression that represents an LR(1) "shift" operation.  Passes throughy to GenerateShiftWithValue or GenerateShiftWithoutValue depending on whether the terminal has an associated value.
+        /// </summary>
+        /// <param name="classifier">The classifier generator</param>
+        /// <param name="targetState">The target state of the shift operation</param>
+        /// <param name="callTarget">The method representing the target state</param>
+        /// <param name="stateParam">An Expression representing the parser state object</param>
+        /// <param name="depthParam">An Expression representing the parse depth</param>
+        /// <param name="stackValueParams">Expressions representing the values on the stack</param>
+        /// <param name="term">The terminal which needs to be matched in order for this shift to take place</param>
+        /// <param name="allTerminals">All terminals in the grammar</param>
+        /// <param name="parserTypeBuilder">The type builder for the parser class</param>
+        /// <returns>An expression that represents an LR(1) "shift" operation</returns>
         Expression GenerateShift(TerminalClassifierSession<TChar> classifier, LRParseState<TChar> targetState, MethodInfo callTarget, Expression stateParam, Expression depthParam, ParameterExpression[] stackValueParams,
             Terminal<TChar> term, IDictionary<Terminal<TChar>, int> allTerminals, TypeBuilder parserTypeBuilder)
         {
@@ -205,6 +264,15 @@ namespace Framework.Parsing
                 term, allTerminals, parserTypeBuilder);
         }
 
+        /// <summary>
+        /// Create an Expression representing an LR(1) "reduce" operation
+        /// </summary>
+        /// <param name="stateParam">An Expression representing the parser state object</param>
+        /// <param name="depthParam">An Expression representing the parse depth</param>
+        /// <param name="stackValueParams">Expressions representing the values on the value stack</param>
+        /// <param name="rule">The rule being matched by this reduction</param>
+        /// <param name="allNonTerminals">All nonterminals in the grammar</param>
+        /// <returns></returns>
         Expression GenerateReduce(Expression stateParam, Expression depthParam, ParameterExpression[] stackValueParams,
             GrammarRule rule, IDictionary<NonTerminal,int> allNonTerminals)
         {
@@ -250,9 +318,11 @@ namespace Framework.Parsing
             {
                 // Nonterminal has a value type but no action, so we'll treat it as a pass-through.
                 // That is, the current non-terminal value is whatever is on top of the value stack at this point.
+                // TODO: Check whether the value on top of the stack is actually compatible with the nonterminal's value.
                 statements.Add(Expression.Invoke(this.SetNonTerminalValueExpr(rule.LeftHandSide.ValueType), stateParam, 
                     Expression.Convert(stackValueParams[0], rule.LeftHandSide.ValueType)));
             }
+            // TODO: Add some default handling for cases such as building lists.
             // The execution stack needs to have one frame popped for each symbol on the right hand side of the rule.
             int depthChange = rule.RightHandSide.Count;
             statements.Add(Expression.Subtract(depthParam, Expression.Constant(depthChange)));
@@ -260,7 +330,17 @@ namespace Framework.Parsing
             return Expression.Block(statements);
         }
 
-
+        /// <summary>
+        /// Populate a MethodBuilder with code to implement a single LR(1) state.
+        /// </summary>
+        /// <param name="stateMethodBuilder">The MethodBuilder to populate.  Its body should be empty when this method is called.</param>
+        /// <param name="numValueParams">The number of stack value parameters for this state method</param>
+        /// <param name="state">The LR(1) state that this method will implement</param>
+        /// <param name="callTargets">A map of LR(1) states to implementing methods.  Transitions to other states will be represented by calls to the corresponding methods</param>
+        /// <param name="classifier">The token classifier generator</param>
+        /// <param name="allTerminals">All terminals in the grammar</param>
+        /// <param name="allNonTerminals">All non-terminals in the grammar</param>
+        /// <param name="parserTypeBuilder"></param>
         void GenerateState(MethodBuilder stateMethodBuilder, int numValueParams, LRParseState<TChar> state,
             IDictionary<LRParseState<TChar>, MethodInfo> callTargets,
             TerminalClassifierSession<TChar> classifier,
@@ -404,6 +484,7 @@ namespace Framework.Parsing
                 lambda.CompileToMethod(stateMethodBuilder);
         }
 
+        // Generates a parser for the parse table.
         public LambdaExpression Generate(string prefix, LRParseTable<TChar> parseTable, TerminalClassifierSession<TChar> classifier)
         {
             var assmBuilder = AppDomain.CurrentDomain.DefineDynamicAssembly(new AssemblyName("GeneratedParser"), AssemblyBuilderAccess.RunAndCollect);
@@ -414,6 +495,7 @@ namespace Framework.Parsing
             return result;
         }
 
+        // Generates a parser for the parse table and includes it in the type constructed by parserTypeBuilder.
         public LambdaExpression Generate(string prefix, ModuleBuilder parserModuleBuilder, TypeBuilder parserTypeBuilder,
             LRParseTable<TChar> parseTable,
             TerminalClassifierSession<TChar> classifier)

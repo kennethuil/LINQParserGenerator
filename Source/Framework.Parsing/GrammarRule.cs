@@ -74,7 +74,12 @@ namespace Framework.Parsing
                 sb.Append(" ");
             }
             return sb.ToString();
-        } 
+        }
+
+        public static GrammarRule Create(NonTerminal left, params GrammarSymbol[] right)
+        {
+            return new GrammarRule { LeftHandSide = left, RightHandSide = right };
+        }
     }
 
     [Serializable]
