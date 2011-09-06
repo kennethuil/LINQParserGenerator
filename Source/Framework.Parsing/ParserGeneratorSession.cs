@@ -315,6 +315,8 @@ namespace Framework.Parsing
             }
             else if (rule.LeftHandSide.ValueType != typeof(void) && rule.LeftHandSide.ValueType != null)
             {
+                // If we've gotten here, the left hand symbol needs a value but no semantic action was provided to create it.
+                // We support some default symbol value building operations here.
                 var destType = rule.LeftHandSide.ValueType;
 
                 var inputSymbols = (from x in rule.RightHandSide where (x.ValueType != null && x.ValueType != typeof(void)) select x).ToList();
@@ -323,11 +325,13 @@ namespace Framework.Parsing
                 {
                     if (destType.IsAssignableFrom(inputSymbols[0].ValueType))
                     {
-                        // Pass-through.
+                        // Types match, just pass the value through.
                         ntValue = stackValueParams[0];
                     }
                     else if (destType.IsAssignableFrom(typeof(List<>).MakeGenericType(inputSymbols[0].ValueType)))
                     {
+                        // Left hand type is a list where the list elements are of the right hand type.  Create a list with one element
+                        // and use that as the left hand symbol's value.
                         var newlist = Expression.Parameter(typeof(List<>).MakeGenericType(inputSymbols[0].ValueType));
                         ntValue = Expression.Block(
                             new[] { newlist },
@@ -345,6 +349,9 @@ namespace Framework.Parsing
                 {
                     var p0 = Expression.Convert(stackValueParams[0], inputSymbols[0].ValueType);
                     var p1 = Expression.Convert(stackValueParams[1], inputSymbols[1].ValueType);
+                    // If the left hand symbol's value type is a list, see if one of the right hand symbol types is the same type,
+                    // and the other right hand symbol type is the element type of that list type.
+                    // If so, we'll append the element to the incoming list and use the list as the left hand symbol's value.
                     if (destType == p1.Type && typeof(IList<>).MakeGenericType(p0.Type).IsAssignableFrom(destType))
                     {
                         // Switch them so we only have to handle one case.
@@ -364,8 +371,8 @@ namespace Framework.Parsing
 
                 if (ntValue == null)
                 {
-                    // Try to find an input symbol that can be passed through.
-                    //var passthrus = from x in inputSymbols where destType.IsAssignableFrom(x.ValueType) select x;
+                    // None of the cases above apply.
+                    // Try to find an input symbol value that can be passed through.
                     int i = 0;
                     foreach (var x in inputSymbols)
                     {
@@ -379,10 +386,12 @@ namespace Framework.Parsing
                     
                     if (ntValue == null)
                     {
+                        // We're completely out of luck, the developer really needs to put a semantic action on this rule.
                         throw new ApplicationException("No symbol values found on the right side that can be case to the left hand symbol's type");
                     }
                 }
 
+                // Set whatever value we've derived above as the left hand symbol's value.
                 statements.Add(Expression.Invoke(this.SetNonTerminalValueExpr(rule.LeftHandSide.ValueType), stateParam,
                     Expression.Convert(ntValue, rule.LeftHandSide.ValueType)));
             }
