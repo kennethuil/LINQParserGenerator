@@ -10,7 +10,6 @@ using System.Text;
 using ExpressionTests;
 using Framework.CodeGen;
 
-
 namespace Framework.Parsing
 {
     public class ParserGeneratorSession<TChar> where TChar : IComparable<TChar>, IEquatable<TChar>
@@ -316,13 +315,65 @@ namespace Framework.Parsing
             }
             else if (rule.LeftHandSide.ValueType != typeof(void) && rule.LeftHandSide.ValueType != null)
             {
-                // Nonterminal has a value type but no action, so we'll treat it as a pass-through.
-                // That is, the current non-terminal value is whatever is on top of the value stack at this point.
-                // TODO: Check whether the value on top of the stack is actually compatible with the nonterminal's value.
-                statements.Add(Expression.Invoke(this.SetNonTerminalValueExpr(rule.LeftHandSide.ValueType), stateParam, 
-                    Expression.Convert(stackValueParams[0], rule.LeftHandSide.ValueType)));
+                var destType = rule.LeftHandSide.ValueType;
+
+                var inputSymbols = (from x in rule.RightHandSide where (x.ValueType != null && x.ValueType != typeof(void)) select x).ToList();
+                Expression ntValue;
+                if (inputSymbols.Count() == 1)
+                {
+                    if (destType.IsAssignableFrom(inputSymbols[0].ValueType))
+                    {
+                        // Pass-through.
+                        ntValue = stackValueParams[0];
+                    }
+                    else if (destType.IsAssignableFrom(typeof(List<>).MakeGenericType(inputSymbols[0].ValueType)))
+                    {
+                        var newlist = Expression.Parameter(typeof(List<>).MakeGenericType(inputSymbols[0].ValueType));
+                        ntValue = Expression.Block(
+                            new[] { newlist },
+                            new Expression[] {
+                                Expression.Assign(newlist, Expression.New(typeof(List<>).MakeGenericType(inputSymbols[0].ValueType))),
+                                Expression.Call(newlist, "Add", null, Expression.Convert(stackValueParams[0], inputSymbols[0].ValueType)),
+                                newlist});
+                    }
+                    else
+                    {
+                        throw new ApplicationException("Rule's right hand symbol's value cannot be cast to rule's left hand symbol's type");
+                    }
+                }
+                else if (inputSymbols.Count() == 2)
+                {
+                    var p0 = Expression.Convert(stackValueParams[0], inputSymbols[0].ValueType);
+                    var p1 = Expression.Convert(stackValueParams[1], inputSymbols[1].ValueType);
+                    if (destType == p1.Type && typeof(IList<>).MakeGenericType(p0.Type).IsAssignableFrom(destType))
+                    {
+                        // Switch them so we only have to handle one case.
+                        var temp = p0;
+                        p0 = p1;
+                        p1 = temp;
+                    }
+                    if (destType == p0.Type && typeof(ICollection<>).MakeGenericType(p1.Type).IsAssignableFrom(destType))
+                    {
+                        // dest & p0 are a list, p1 is an element of that list.
+                        ntValue = Expression.Block(
+                            new Expression[] {
+                                Expression.Call(Expression.Convert(p0, typeof(ICollection<>).MakeGenericType(p1.Type)), "Add", null, p1),
+                                p0});
+                    }
+                    else
+                    {
+                        // Arbitrarily pass through.
+                        ntValue = stackValueParams[0];
+                    }
+                }
+                else
+                {
+                    ntValue = stackValueParams[0];
+                }
+                statements.Add(Expression.Invoke(this.SetNonTerminalValueExpr(rule.LeftHandSide.ValueType), stateParam,
+                    Expression.Convert(ntValue, rule.LeftHandSide.ValueType)));
             }
-            // TODO: Add some default handling for cases such as building lists.
+            
             // The execution stack needs to have one frame popped for each symbol on the right hand side of the rule.
             int depthChange = rule.RightHandSide.Count;
             statements.Add(Expression.Subtract(depthParam, Expression.Constant(depthChange)));
