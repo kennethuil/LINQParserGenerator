@@ -21,8 +21,7 @@ namespace Framework.Parsing
         }
 
 
-        public ISet<Terminal<TChar>> GetPossibleTerminals(IDictionary<Terminal<TChar>, int> allTerminals,
-            LRParseState<TChar> nextState)
+        public ISet<Terminal<TChar>> GetPossibleTerminals(LRParseState<TChar> nextState)
         {
             var result = new HashableSet<Terminal<TChar>>();
             foreach (var entry in nextState.Actions)
