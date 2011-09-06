@@ -348,8 +348,59 @@ namespace Framework.Parsing
             IDictionary<NonTerminal, int> allNonTerminals,
             TypeBuilder parserTypeBuilder)
         {
-            // A state method takes as parameters the parser state, current parser stack depth, and the value stack, and returns the stack depth that the
-            // parsing stack frame should have after this state's reductions and gotos are done.
+            // A state method takes as parameters the parser state, current parser stack depth, and the value stack, and returns the stack depth
+            // that the parsing stack frame should have after this state's reductions and gotos are done.
+            // The body of the state method goes like this:
+            //
+            // StateMethod(parserState, depth, stack0, stack1, ..., stackN)
+            // {
+            //    switch(NextTerminal)
+            //    {
+            //       // Cases come from Action table.
+            //       case Terminal1:
+            //         // Terminal has a value
+            //         readNextTerminal();
+            //         newDepth = OtherStateMethod(parserState, depth+1, CurrentTerminalValue, stack0, ..., stackN-1);
+            //         break;
+            //       case Terminal2:
+            //         // Terminal does not have a value
+            //         readNextTerminal();
+            //         newDepth = OtherStateMethod(parserState, depth+1, stack0, stack1, ..., stackN);
+            //         break;
+            //       case Terminal3:
+            //       case Terminal4:
+            //         // Reduce on rule R
+            //         CurrentNonTerminalValue = R.SemanticAction(stack1, stack0);
+            //         newDepth = depth - R.NumSymbols
+            //         break;
+            //       ...
+            //       default:
+            //         // We've got a big fat parsing error here.
+            //         // A new depth of -1 will return us all the way back to the beginning and signal an error.
+            // TODO: Implement real error reporting and recovery.
+            //         return -1;
+            //    }
+            //    // If there aren't any entries in the Goto table for this state,
+            //    // the entire loop and everything in it goes away, and shifts can beome tail calls.
+            // TODO: Verify that shifts actually become tail calls in that case.
+            //    while(newDepth == depth)
+            //    {
+            //       // Cases come from Goto table
+            //       switch(CurrentNonTerminal)
+            //       {
+            //         case NonTerminal1:
+            //           // NonTerminal has a value
+            //           newDepth = OtherStateMethod(parserState, depth+1, CurrentNonTerminalValue, stack0, ..., stackN-1);
+            //           break;
+            //         case NonTerminal2:
+            //           // NonTerminal does not have a value
+            //           newDepth = OtherStateMethod(parserState, depth+1, stack0, stack1, ..., stackN);
+            //           break;
+            //         ...
+            //       }
+            //    }
+            //    return newDepth
+            //  }
             var stateParam = Expression.Parameter(classifier.StateType, "state");
             var depthParam = Expression.Parameter(typeof(int), "depth");
             var stackParams = new ParameterExpression[numValueParams];
@@ -361,6 +412,7 @@ namespace Framework.Parsing
                 stackParams[i] = Expression.Parameter(typeof(object), "stack" + i);
             }
 
+            
             List<SwitchCase> cases = new List<SwitchCase>();
             IDictionary<GrammarRule, List<int>> reductionRules = new Dictionary<GrammarRule, List<int>>();
 
@@ -484,7 +536,13 @@ namespace Framework.Parsing
                 lambda.CompileToMethod(stateMethodBuilder);
         }
 
-        // Generates a parser for the parse table.
+        /// <summary>
+        /// Generates a parser for the parse table and includes it in a newly created RunAndCollect assembly.
+        /// </summary>
+        /// <param name="prefix">A unique prefix to be added to a newly-created internal support class</param>
+        /// <param name="parseTable">The LR(1) parse table</param>
+        /// <param name="classifier">The classifier generator</param>
+        /// <returns></returns>
         public LambdaExpression Generate(string prefix, LRParseTable<TChar> parseTable, TerminalClassifierSession<TChar> classifier)
         {
             var assmBuilder = AppDomain.CurrentDomain.DefineDynamicAssembly(new AssemblyName("GeneratedParser"), AssemblyBuilderAccess.RunAndCollect);
@@ -495,13 +553,22 @@ namespace Framework.Parsing
             return result;
         }
 
-        // Generates a parser for the parse table and includes it in the type constructed by parserTypeBuilder.
+        /// <summary>
+        /// Generates a parser for the parse table and includes it in the type constructed by parserTypeBuilder.
+        /// </summary>
+        /// <param name="prefix">A unique prefix to be added to a newly-created internal support class</param>
+        /// <param name="parserModuleBuilder">The builder for the module that the parser will live in</param>
+        /// <param name="parserTypeBuilder">The builder for the class that the parser will live in</param>
+        /// <param name="parseTable">The LR(1) parse table</param>
+        /// <param name="classifier">The classifier generator</param>
+        /// <returns>A LambdaExpression for calling the start state of the parser.</returns>
         public LambdaExpression Generate(string prefix, ModuleBuilder parserModuleBuilder, TypeBuilder parserTypeBuilder,
             LRParseTable<TChar> parseTable,
             TerminalClassifierSession<TChar> classifier)
         {
             // Find out the maximum number of values that need to be passed to any nonterminal rule action
             // Each state method will need that number of stack value parameters.
+            // TODO: Some state methods might be able to get by with fewer parameters, and we can sometimes determine what types the stack parameters should be.
             int numValueParams = parseTable.Rules.Where(rule => rule.Action != null).Aggregate(0, (current, rule) => Math.Max(current, rule.Action.Parameters.Count));
 
             classifier = classifier.CreateWithNewResultType(typeof(int));
@@ -523,7 +590,8 @@ namespace Framework.Parsing
                 Enumerable.Repeat(typeof(object), numValueParams)).ToArray();
 
             // Loop through all states in our parse table, and set up terminal handlers in the terminal classifier,
-            // and create a MethodBuilder for the body of each state method.
+            // and create a MethodBuilder for the body of each state method.  We won't actually put any code into
+            // any state methods until all the MethodBuilders exist and all terminals and nonterminals have been processed
             // Here we initialize some stuff for the loop
             int terminalNumber = 1;
             ParameterExpression expParserState = Expression.Parameter(classifier.StateType);
@@ -547,8 +615,6 @@ namespace Framework.Parsing
                 var methodBuilderWrap = new MethodBuilderWrap(parserTypeBuilder, "State" + i, MethodAttributes.Public | MethodAttributes.Static,
                     typeof(int), stateParameterTypes);
 
-                //var methodBuilder = parserTypeBuilder.DefineMethod("State" + i, MethodAttributes.Public | MethodAttributes.Static,
-                //    typeof(int), stateParameterTypes);
                 var methodBuilder = methodBuilderWrap.GetMethodBuilder();
 
                 ++i;
