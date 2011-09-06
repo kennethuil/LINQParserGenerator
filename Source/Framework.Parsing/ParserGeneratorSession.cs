@@ -254,7 +254,6 @@ namespace Framework.Parsing
             Terminal<TChar> term, IDictionary<Terminal<TChar>, int> allTerminals, TypeBuilder parserTypeBuilder)
         {
             // Generate code to represent a "shift" action
-            //bool hasValue = classifier.IsCapturing(term);
             bool hasValue = term.ValueType != null && term.ValueType != typeof(void);
 
             return hasValue ? GenerateShiftWithValue(classifier, targetState, callTarget, stateParam, depthParam, stackValueParams,
@@ -288,6 +287,9 @@ namespace Framework.Parsing
                 var actionParams = new List<Expression>();
                 int numStateParams;
 
+                // If the semantic action needs the parser state object, pass it in.
+                // NOTE: The parser state object is only supported as the semantic action's first parameter.
+                // Otherwise skip it.
                 if (rule.Action.Parameters[0].Type == stateParam.Type)
                 {
                     actionParams.Add(stateParam);
@@ -295,6 +297,10 @@ namespace Framework.Parsing
                 }
                 else
                     numStateParams = 0;
+
+                // Pass the value parameters in, ordering them so that the last parameter comes from the top of the stack.
+                // That way, the semantic action for A->BC gets called with B's value followed by C's value.
+                // TODO: Check the types and numbers of the values being passed in.
                 int numValueParams = rule.Action.Parameters.Count - numStateParams;
                 int i;
                 for (i = 0; i < numValueParams; ++i)
