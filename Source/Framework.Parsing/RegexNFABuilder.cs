@@ -42,10 +42,6 @@ namespace Framework.Parsing
                 ((a, b) => RegexNFABuilderSupport.Concat(a, b));
             g.OneOrMoreRule.Action =
                 ((a) => RegexNFABuilderSupport.OneOrMore(a));
-            //g.SelectCharListSingleonRule.Action =
-            //    ((a) => new List<NFAFragment<TChar>> { a });
-            //g.SelectCharListAppendRule.Action =
-            //    ((a, b) => RegexNFABuilderSupport.AppendToList(a, b));
             g.SelectCharRule.Action =
                 ((l) => RegexNFABuilderSupport.Select(l));
             g.SelectNotCharRule.Action =

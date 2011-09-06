@@ -270,7 +270,7 @@ namespace ParsingTests
                 + s1 + ", " + s2 + ")");
             g.SelectCharListAppendRule.Action = 
                 ((l, s) => GetAppend(l,s));
-            g.SelectCharListSingleonRule.Action = 
+            g.SelectCharListSingletonRule.Action = 
                 ((s) => new List<string> { s });
             g.SelectCharRule.Action = 
                 ((l) => (l.Count == 1) ? l[0] : "SelectChar(" + string.Join(", ", l) + ")");

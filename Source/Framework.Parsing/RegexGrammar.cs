@@ -65,7 +65,7 @@ namespace Framework.Parsing
         public GrammarRule<IList<TValue>, TValue> SelectNotCharRule { get; private set; }
         public GrammarRule<char, char, TValue> SelectRangeCharRule { get; private set; }
         public GrammarRule<IList<TValue>, TValue, IList<TValue>> SelectCharListAppendRule { get; private set; }
-        public GrammarRule<TValue, IList<TValue>> SelectCharListSingleonRule { get; private set; }
+        public GrammarRule<TValue, IList<TValue>> SelectCharListSingletonRule { get; private set; }
         public GrammarRule<char, TValue> SpecificCharMatchRule { get; private set; }
 
         private static readonly ISet<char> _dontMatchNonControlChar =
@@ -243,7 +243,7 @@ namespace Framework.Parsing
                     Name="RegexSelectChar"},
                 SelectRangeCharRule = new GrammarRule<char,char,TValue>{LeftHandSide = SelectRangeChar, RightHandSide = new GrammarSymbol[] {SpecificChar, dash, SpecificChar},
                     Name = "RegexSelectRangeChar"},
-                SelectCharListSingleonRule = new GrammarRule<TValue,IList<TValue>>{LeftHandSide = CharList, RightHandSide = new GrammarSymbol[] {SingleChar},
+                SelectCharListSingletonRule = new GrammarRule<TValue,IList<TValue>>{LeftHandSide = CharList, RightHandSide = new GrammarSymbol[] {SingleChar},
                     Name = "RegexCharListSingleton"},
                 SelectCharListAppendRule = new GrammarRule<IList<TValue>,TValue, IList<TValue>>
                     {LeftHandSide = CharList, RightHandSide = new GrammarSymbol[] {CharList, SingleChar}, Name="RegexCharListAppend"},
