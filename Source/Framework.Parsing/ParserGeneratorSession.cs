@@ -318,7 +318,7 @@ namespace Framework.Parsing
                 var destType = rule.LeftHandSide.ValueType;
 
                 var inputSymbols = (from x in rule.RightHandSide where (x.ValueType != null && x.ValueType != typeof(void)) select x).ToList();
-                Expression ntValue;
+                Expression ntValue = null;
                 if (inputSymbols.Count() == 1)
                 {
                     if (destType.IsAssignableFrom(inputSymbols[0].ValueType))
@@ -338,7 +338,7 @@ namespace Framework.Parsing
                     }
                     else
                     {
-                        throw new ApplicationException("Rule's right hand symbol's value cannot be cast to rule's left hand symbol's type");
+                        throw new ApplicationException("Right hand symbol's value cannot be cast to the left hand symbol's type");
                     }
                 }
                 else if (inputSymbols.Count() == 2)
@@ -360,16 +360,29 @@ namespace Framework.Parsing
                                 Expression.Call(Expression.Convert(p0, typeof(ICollection<>).MakeGenericType(p1.Type)), "Add", null, p1),
                                 p0});
                     }
-                    else
+                }
+
+                if (ntValue == null)
+                {
+                    // Try to find an input symbol that can be passed through.
+                    //var passthrus = from x in inputSymbols where destType.IsAssignableFrom(x.ValueType) select x;
+                    int i = 0;
+                    foreach (var x in inputSymbols)
                     {
-                        // Arbitrarily pass through.
-                        ntValue = stackValueParams[0];
+                        if (destType.IsAssignableFrom(x.ValueType))
+                        {
+                            ntValue = Expression.Convert(stackValueParams[i], destType);
+                            break;
+                        }
+                        ++i;
+                    }
+                    
+                    if (ntValue == null)
+                    {
+                        throw new ApplicationException("No symbol values found on the right side that can be case to the left hand symbol's type");
                     }
                 }
-                else
-                {
-                    ntValue = stackValueParams[0];
-                }
+
                 statements.Add(Expression.Invoke(this.SetNonTerminalValueExpr(rule.LeftHandSide.ValueType), stateParam,
                     Expression.Convert(ntValue, rule.LeftHandSide.ValueType)));
             }
