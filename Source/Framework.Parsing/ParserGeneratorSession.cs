@@ -132,7 +132,6 @@ namespace Framework.Parsing
         /// </summary>
         /// <param name="stateParam">An Expression for the parser state object</param>
         /// <param name="classifier">The classifier generator</param>
-        /// <param name="allTerminals">All the terminals in the grammar</param>
         /// <param name="targetState">The state that will run immediately after the next terminal is read.</param>
         /// <param name="parserType">A builder for the parser class.</param>
         /// <returns></returns>
@@ -196,7 +195,6 @@ namespace Framework.Parsing
         /// <param name="depthParam">An Expression representing the parse depth</param>
         /// <param name="stackValueParams">Expressions representing the values on the stack</param>
         /// <param name="term">The terminal which needs to be matched in order for this shift to take place</param>
-        /// <param name="allTerminals">All terminals in the grammar</param>
         /// <param name="parserTypeBuilder">The type builder for the parser class</param>
         /// <returns>An expression that represents an LR(1) "shift" operation</returns>
         Expression GenerateShiftWithValue(TerminalClassifierSession<TChar> classifier, LRParseState<TChar> targetState, MethodInfo callTarget, Expression stateParam, Expression depthParam, ParameterExpression[] stackValueParams,
@@ -224,7 +222,6 @@ namespace Framework.Parsing
         /// <param name="depthParam">An Expression representing the parse depth</param>
         /// <param name="stackValueParams">Expressions representing the values on the stack</param>
         /// <param name="term">The terminal which needs to be matched in order for this shift to take place</param>
-        /// <param name="allTerminals">All terminals in the grammar</param>
         /// <param name="parserTypeBuilder">The type builder for the parser class</param>
         /// <returns>An expression that represents an LR(1) "shift" operation</returns>
         Expression GenerateShiftWithoutValue(TerminalClassifierSession<TChar> classifier, LRParseState<TChar> targetState, MethodInfo callTarget, Expression stateParam, Expression depthParam, ParameterExpression[] stackValueParams,
@@ -246,7 +243,6 @@ namespace Framework.Parsing
         /// <param name="depthParam">An Expression representing the parse depth</param>
         /// <param name="stackValueParams">Expressions representing the values on the stack</param>
         /// <param name="term">The terminal which needs to be matched in order for this shift to take place</param>
-        /// <param name="allTerminals">All terminals in the grammar</param>
         /// <param name="parserTypeBuilder">The type builder for the parser class</param>
         /// <returns>An expression that represents an LR(1) "shift" operation</returns>
         Expression GenerateShift(TerminalClassifierSession<TChar> classifier, LRParseState<TChar> targetState, MethodInfo callTarget, Expression stateParam, Expression depthParam, ParameterExpression[] stackValueParams,
@@ -366,7 +362,7 @@ namespace Framework.Parsing
                     }
                     if (destType == p0.Type && typeof(ICollection<>).MakeGenericType(p1.Type).IsAssignableFrom(destType))
                     {
-                        // dest & p0 are a list, p1 is an element of that list.
+                        // dest & p0 are a list, p1 is an element of that list.  Append p1 to the list p0 and set p0 as the left hand symbol's value.
                         ntValue = Expression.Block(
                             new Expression[] {
                                 Expression.Call(Expression.Convert(p0, typeof(ICollection<>).MakeGenericType(p1.Type)), "Add", null, p1),
@@ -454,12 +450,12 @@ namespace Framework.Parsing
             //       ...
             //       default:
             //         // We've got a big fat parsing error here.
-            //         // A new depth of -1 will return us all the way back to the beginning and signal an error.
+            //         // A new depth of -1 will return us all the way back to the original parse entry method and signal an error.
             // TODO: Implement real error reporting and recovery.
             //         return -1;
             //    }
             //    // If there aren't any entries in the Goto table for this state,
-            //    // the entire loop and everything in it goes away, and shifts can beome tail calls.
+            //    // the entire loop below goes away, and shifts can beome tail calls.
             // TODO: Verify that shifts actually become tail calls in that case.
             //    while(newDepth == depth)
             //    {
@@ -494,6 +490,9 @@ namespace Framework.Parsing
             List<SwitchCase> cases = new List<SwitchCase>();
             IDictionary<GrammarRule, List<int>> reductionRules = new Dictionary<GrammarRule, List<int>>();
 
+            // Create the first switch statement to handle the actions.
+
+            // Loop through the actions and create switch cases for them.
             foreach (var actionEntry in state.Actions)
             {
                 var term = actionEntry.Key;
@@ -501,7 +500,7 @@ namespace Framework.Parsing
 
                 var actionSet = actionEntry.Value;
 
-                // TODO: If there's multiple actions here, codegen in some GLR goodness.
+                // TODO: If there's multiple actions for one terminal, codegen in some GLR goodness.
                 if (actionSet.Count() > 1)
                 {
                     throw new NotSupportedException("LALR conflict detected");
@@ -512,6 +511,7 @@ namespace Framework.Parsing
 
                 if (action is ShiftAction<TChar>)
                 {
+                    // Create a switch case for this shift action.
                     var targetState = ((ShiftAction<TChar>)action).TargetState;
                     var callTarget = callTargets[targetState];
                     var shift = GenerateShift(classifier, targetState, callTarget, stateParam, depthParam, stackParams,
@@ -521,6 +521,8 @@ namespace Framework.Parsing
                 }
                 else if (action is ReduceAction<TChar>)
                 {
+                    // The same reduction action is frequently done for several terminals.  So within the loop,
+                    // we map reduction rules to lists of terminals so we can roll it all up into one switch case block later.
                     var reduceAction = (ReduceAction<TChar>)action;
                     var rule = reduceAction.ReductionRule;
                     List<int> values;
@@ -537,6 +539,7 @@ namespace Framework.Parsing
                     cases.Add(Expression.SwitchCase(Expression.Constant(0), Expression.Constant(termNumber)));
                 }
             }
+            // Create cases for all the reduction rules we collected above.
             foreach (var entry in reductionRules)
             {
                 var rule = entry.Key;
@@ -549,6 +552,7 @@ namespace Framework.Parsing
                 cases.Add(Expression.SwitchCase(reduce, from x in values select Expression.Constant(x)));
             }
             
+            // Now roll it all up into a switch statement, switching on the result of invoking GetTerminal
             var expTerm = Expression.Invoke(this.GetTerminal, stateParam);
             Expression shiftOrReduce = Expression.Switch(
                 expTerm,
@@ -559,11 +563,13 @@ namespace Framework.Parsing
 
             if (state.Goto != null && state.Goto.Count != 0)
             {
+                // Now we generate code to handle the goto table.
                 List<Expression> parts = new List<Expression>();
                 ParameterExpression expNewDepth = Expression.Parameter(typeof(int), "x");
                 var assignNewDepth = Expression.Assign(expNewDepth, shiftOrReduce);
 
                 List<SwitchCase> gotoCases = new List<SwitchCase>();
+                // Create switch cases for each of the goto entries.
                 foreach (var g in state.Goto)
                 {
                     var nt = g.Key;
@@ -580,6 +586,7 @@ namespace Framework.Parsing
                     gotoCases.Add(Expression.SwitchCase(doGoto, new[] { Expression.Constant(ntNumber) }));
                 }
                 LabelTarget label = Expression.Label(typeof(void));
+                // Roll it all up in a switch block that keeps executing as long as newDepth == depth
                 Expression gotoLoop = Expression.Loop(
                     Expression.Block(
                         Expression.IfThen(Expression.NotEqual(depthParam, expNewDepth), Expression.Break(label)),
@@ -597,6 +604,7 @@ namespace Framework.Parsing
             }
             else
             {
+                // No Goto entries, the method's body only has the shiftOrReduce bit.
                 body = shiftOrReduce;
             }
 
@@ -605,6 +613,8 @@ namespace Framework.Parsing
                     new[] { reductionRule }, body);
 
             var lambda = Expression.Lambda(body, true, new ParameterExpression[] { stateParam, depthParam }.Concat(stackParams));
+
+            // And compile the whole mess into the method builder.
             if (_includeSymbols)
                 lambda.CompileToMethod(stateMethodBuilder, DebugInfoGenerator.CreatePdbGenerator());
             else
