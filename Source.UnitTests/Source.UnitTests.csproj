@@ -65,6 +65,10 @@
     <!-- Telerik MVC Controls -->
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\CompilerSample\CompilerSample.csproj">
+      <Project>{7DA11452-5AA2-4FD3-8F47-06D21EA7B958}</Project>
+      <Name>CompilerSample</Name>
+    </ProjectReference>
     <ProjectReference Include="..\Source\Framework.CodeGen\Framework.CodeGen.csproj">
       <Project>{775DB3EF-1790-47D4-9BF4-28E080D5DDC0}</Project>
       <Name>Framework.CodeGen</Name>
@@ -75,6 +79,7 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="CompilerSampleTests\GrammarTests.cs" />
     <Compile Include="Framework.Parsing.Tests\BooleanExpressionTests.cs" />
     <Compile Include="Framework.Parsing.Tests\FiniteAutomatonTests.cs" />
     <Compile Include="Framework.Parsing.Tests\LR1ParseTableTests.cs" />

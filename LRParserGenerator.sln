@@ -11,6 +11,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ExpressionTests", "Expressi
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Framework.Sql", "Framework.Sql\Framework.Sql.csproj", "{D7CC7B1A-1C5B-4E73-B326-7888FA103A9E}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CompilerSample", "CompilerSample\CompilerSample.csproj", "{7DA11452-5AA2-4FD3-8F47-06D21EA7B958}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -71,6 +73,16 @@ Global
 		{D7CC7B1A-1C5B-4E73-B326-7888FA103A9E}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
 		{D7CC7B1A-1C5B-4E73-B326-7888FA103A9E}.Release|Mixed Platforms.Build.0 = Release|Any CPU
 		{D7CC7B1A-1C5B-4E73-B326-7888FA103A9E}.Release|x86.ActiveCfg = Release|Any CPU
+		{7DA11452-5AA2-4FD3-8F47-06D21EA7B958}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7DA11452-5AA2-4FD3-8F47-06D21EA7B958}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7DA11452-5AA2-4FD3-8F47-06D21EA7B958}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
+		{7DA11452-5AA2-4FD3-8F47-06D21EA7B958}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
+		{7DA11452-5AA2-4FD3-8F47-06D21EA7B958}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{7DA11452-5AA2-4FD3-8F47-06D21EA7B958}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7DA11452-5AA2-4FD3-8F47-06D21EA7B958}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7DA11452-5AA2-4FD3-8F47-06D21EA7B958}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{7DA11452-5AA2-4FD3-8F47-06D21EA7B958}.Release|Mixed Platforms.Build.0 = Release|Any CPU
+		{7DA11452-5AA2-4FD3-8F47-06D21EA7B958}.Release|x86.ActiveCfg = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

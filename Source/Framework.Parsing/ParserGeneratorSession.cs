@@ -348,8 +348,8 @@ namespace Framework.Parsing
                 }
                 else if (inputSymbols.Count() == 2)
                 {
-                    var p0 = Expression.Convert(stackValueParams[0], inputSymbols[0].ValueType);
-                    var p1 = Expression.Convert(stackValueParams[1], inputSymbols[1].ValueType);
+                    var p0 = Expression.Convert(stackValueParams[0], inputSymbols[1].ValueType);
+                    var p1 = Expression.Convert(stackValueParams[1], inputSymbols[0].ValueType);
                     // If the left hand symbol's value type is a list, see if one of the right hand symbol types is the same type,
                     // and the other right hand symbol type is the element type of that list type.
                     // If so, we'll append the element to the incoming list and use the list as the left hand symbol's value.
@@ -846,7 +846,7 @@ namespace Framework.Parsing
         {
             var body = x.Body;
             var pState = x.Parameters[0];
-            var pVal = Expression.Parameter(typeof(int), "val");
+            var pVal = Expression.Parameter(typeof(int), "terminalVal1");
             GetTerminalIs(x);
             SetTerminalIs(Expression.Lambda(Expression.Assign(body, pVal), true, pState, pVal));
             return this;
@@ -866,13 +866,50 @@ namespace Framework.Parsing
 
         public ParserGeneratorSession<TChar, TParseState> TerminalValueExprIs(Func<Type, LambdaExpression> x)
         {
-            GetTerminalValueExpr = x;
+            //GetTerminalValueExpr = x;
+            GetTerminalValueExpr = (t) =>
+                {
+                    LambdaExpression assignable = null;
+                    var assignedType = t;
+                    while (t != null)
+                    {
+                        assignable = x(t);
+                        if (assignable != null)
+                            break;
+                        // TODO: Check interfaces as well.
+
+                        if (t == typeof(object))
+                            break;
+                        t = t.BaseType;
+                        if (t == null)
+                            t = typeof(object);
+                    }
+                    if (t == assignedType)
+                        return assignable;
+
+                    var pState = assignable.Parameters[0];
+                    return Expression.Lambda(Expression.Convert(assignable.Body, assignedType), true, pState);
+                };
             SetTerminalValueExpr = (t) =>
                 {
-                    var assignable = x(t);
+                    LambdaExpression assignable = null;
+                    var assignedType = t;
+                    while(t != null)
+                    {
+                        assignable = x(t);
+                        if (assignable != null)
+                            break;
+                        // TODO: Check interfaces as well.
+
+                        if (t == typeof(object))
+                            break;
+                        t = t.BaseType;
+                        if (t == null)
+                            t = typeof(object);
+                    }
                     var body = assignable.Body;
                     var pState = assignable.Parameters[0];
-                    var pVal = Expression.Parameter(t, "val");
+                    var pVal = Expression.Parameter(assignedType, "terminalVal2");
                     if (body is UnaryExpression && body.NodeType == ExpressionType.Convert)
                     {
                         var operand = ((UnaryExpression)body).Operand;
@@ -880,7 +917,7 @@ namespace Framework.Parsing
                             pVal, operand.Type)), true, pState, pVal);
                     }
 
-                    return Expression.Lambda(Expression.Assign(body, pVal), true, pState, pVal);
+                    return Expression.Lambda(Expression.Assign(body, Expression.Convert(pVal, body.Type)), true, pState, pVal);
                 };
             return this;
         }
@@ -900,6 +937,7 @@ namespace Framework.Parsing
 
         public ParserGeneratorSession<TChar, TParseState> NonTerminalValueExprIs<TVal>(Expression<Func<TParseState, TVal>> x)
         {
+            
             var existing = GetNonTerminalValueExpr;
             if (existing == null)
                 existing = t => null;
@@ -907,10 +945,12 @@ namespace Framework.Parsing
             NonTerminalValueExprIs((t) =>
                 t == typeof(TVal) ? x : existing(t));
             return this;
+             
         }
 
         public ParserGeneratorSession<TChar, TParseState> NonTerminalValueExprIs(Func<Type, LambdaExpression> x)
         {
+            /*
             GetNonTerminalValueExpr = x;
             SetNonTerminalValueExpr = (t) =>
             {
@@ -925,6 +965,61 @@ namespace Framework.Parsing
                         pVal, operand.Type)), true, pState, pVal);
                 }
                 return Expression.Lambda(Expression.Assign(body, pVal), true, pState, pVal);
+            };
+            return this;
+             */
+            //GetTerminalValueExpr = x;
+            GetNonTerminalValueExpr = (t) =>
+            {
+                LambdaExpression assignable = null;
+                var assignedType = t;
+                while (t != null)
+                {
+                    assignable = x(t);
+                    if (assignable != null)
+                        break;
+                    // TODO: Check interfaces as well.
+
+                    if (t == typeof(object))
+                        break;
+                    t = t.BaseType;
+                    if (t == null)
+                        t = typeof(object);
+                }
+                if (t == assignedType)
+                    return assignable;
+
+                var pState = assignable.Parameters[0];
+                return Expression.Lambda(Expression.Convert(assignable.Body, assignedType), true, pState);
+            };
+            SetNonTerminalValueExpr = (t) =>
+            {
+                LambdaExpression assignable = null;
+                var assignedType = t;
+                while (t != null)
+                {
+                    assignable = x(t);
+                    if (assignable != null)
+                        break;
+                    // TODO: Check interfaces as well.
+
+                    if (t == typeof(object))
+                        break;
+                    t = t.BaseType;
+                    if (t == null)
+                        t = typeof(object);
+                }
+                var body = assignable.Body;
+                var pState = assignable.Parameters[0];
+                var pVal = Expression.Parameter(assignedType, "nonTerminalVal1");
+                if (body is UnaryExpression && body.NodeType == ExpressionType.Convert)
+                {
+                    var operand = ((UnaryExpression)body).Operand;
+                    return Expression.Lambda(Expression.Assign(operand, Expression.Convert(
+                        pVal, operand.Type)), true, pState, pVal);
+                }
+
+                return Expression.Lambda(Expression.Assign(body, Expression.Convert(pVal, body.Type)), true, pState, pVal);
             };
             return this;
         }
@@ -945,7 +1040,7 @@ namespace Framework.Parsing
         {
             var body = x.Body;
             var pState = x.Parameters[0];
-            var pVal = Expression.Parameter(typeof(int), "val");
+            var pVal = Expression.Parameter(typeof(int), "nonTerminalVal2");
             GetNonTerminalIs(x);
             SetNonTerminalIs(Expression.Lambda(Expression.Assign(body, pVal), true, pState, pVal));
             return this;

@@ -93,10 +93,12 @@ namespace Framework.Parsing
                 .NonTerminalIs(ps => ps.NonTerminal)
                 .TerminalValueExprIs<NFAFragment<TChar>>(ps => ps.TerminalValue)
                 .TerminalValueExprIs<char>(ps=>ps.TerminalCharValue)
-                .NonTerminalValueExprIs<NFAFragment<TChar>>(ps => ps.NonTerminalValue)
-                .NonTerminalValueExprIs<IList<NFAFragment<TChar>>>(ps => ps.NonTerminalListValue)
+                //.NonTerminalValueExprIs<NFAFragment<TChar>>(ps => ps.NonTerminalValue)
+                //.NonTerminalValueExprIs<IList<NFAFragment<TChar>>>(ps => ps.NonTerminalListValue)
+                //.NonTerminalValueExprIs<char>(ps=>ps.NonTerminalCharValue)
+                .NonTerminalValueExprIs<object>(ps=>ps.NonTerminalValue)
                 .NonTerminalValueExprIs<char>(ps=>ps.NonTerminalCharValue)
-                //.IncludeSymbols(true)
+                .IncludeSymbols(true)
                 .Generate("ParseExpr", parseTable, classifier);
 
             var expString = Expression.Parameter(typeof(string), "regexString");
@@ -108,7 +110,7 @@ namespace Framework.Parsing
                     Expression.Block(new[] { expState, expFragment },
                         Expression.Assign(expState, Expression.New(typeof(RegexNFABuilderSupport.ParserState<TChar>).GetConstructor(new[] { typeof(string) }), expString)),
                         Expression.Invoke(parser, expState),
-                        Expression.Assign(expFragment, Expression.Property(expState, "NonTerminalValue")),
+                        Expression.Assign(expFragment, Expression.Convert(Expression.Property(expState, "NonTerminalValue"), typeof(NFAFragment<TChar>))),
                         Expression.Assign(
                             Expression.Property(Expression.PropertyOrField(expFragment, "End"), "IsAccepting"),
                             Expression.Constant(true)),

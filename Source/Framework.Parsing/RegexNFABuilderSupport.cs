@@ -59,9 +59,9 @@ namespace Framework.Parsing
                 set { _terminalCharValue = value; }
             }
 
-            NFAFragment<TChar> _nonTerminalValue;
+            object _nonTerminalValue;
 
-            public NFAFragment<TChar> NonTerminalValue
+            public object NonTerminalValue
             {
                 get { return _nonTerminalValue; }
                 set { _nonTerminalValue = value; }

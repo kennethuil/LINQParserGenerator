@@ -43,7 +43,6 @@ namespace ParsingTests
         public void init()
         {
             _expressionHelper = new ExpressionHelper();
-
             _regexNFABuilder = new RegexCharNFABuilder(_expressionHelper);
             var expr = _regexNFABuilder.CreateRegexParser("TestRegexCompile");
             _regexCompiler = expr.Compile();
@@ -532,7 +531,7 @@ namespace ParsingTests
             var parseTable = parseTableBuilder.BuildParseTable(g);
             parseTable.Dump();
 
-            var classifier = _classifierGen.Classifier<ParseState<double>, double>()
+            var classifier = _classifierGen.Classifier<ParseState<object>, int>()
                 .HasCurrentCharExprIs(ps => ps.HasCurrentChar())
                 .CurrentCharExprIs(ps => ps.CurrentChar())
                 .MoveNextCharExprIs(ps => ps.MoveNextChar())
@@ -543,30 +542,30 @@ namespace ParsingTests
 
             var parserGen = new ParserGenerator<char>(_expressionHelper);
 
-            var parser = parserGen.NewSession<ParseState<double>>()
+            var parser = parserGen.NewSession<ParseState<object>>()
                 .TerminalIs(ps => ps.CurrentTerminal)
                 .NonTerminalIs(ps => ps.CurrentNonTerminal)
-                .TerminalValueExprIs<double>(ps => ps.CurrentTerminalValue)
-                .NonTerminalValueExprIs<double>(ps => ps.CurrentNonTerminalValue)
+                .TerminalValueExprIs<object>(ps => ps.CurrentTerminalValue)
+                .NonTerminalValueExprIs<object>(ps => ps.CurrentNonTerminalValue)
                 //.IncludeSymbols(true)
                 .Generate("ParseExpr", parseTable, classifier);
 
             var f = parser.Compile();
 
             // Now we try it out.
-            var si = new ParseState<double>("1+4*3^2");
+            var si = new ParseState<object>("1+4*3^2");
             Assert.AreEqual(0, f(si));
             Assert.AreEqual(37.0, si.CurrentNonTerminalValue);
 
-            si = new ParseState<double>("(1+4)*3^2");
+            si = new ParseState<object>("(1+4)*3^2");
             Assert.AreEqual(0, f(si));
             Assert.AreEqual(45.0, si.CurrentNonTerminalValue);
 
-            si = new ParseState<double>("((1+4)*3)^2");
+            si = new ParseState<object>("((1+4)*3)^2");
             Assert.AreEqual(0, f(si));
             Assert.AreEqual(225.0, si.CurrentNonTerminalValue);
 
-            si = new ParseState<double>("3*(4+(5-3))");
+            si = new ParseState<object>("3*(4+(5-3))");
             Assert.AreEqual(0, f(si));
             Assert.AreEqual(18.0, si.CurrentNonTerminalValue);
         }
