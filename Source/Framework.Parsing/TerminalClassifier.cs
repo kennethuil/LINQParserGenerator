@@ -472,6 +472,11 @@ namespace Framework.Parsing
             };
         }
 
+        public static Terminal<TChar> GetLiteralToken(String name, IEnumerable<TChar> seq)
+        {
+            return new Terminal<TChar> { Name = name, InitialState = GetLiteralMatcher(seq) };
+        }
+
         public static FiniteAutomatonState<TChar> GetLiteralMatcher(params TChar[] seq)
         {
             return GetLiteralMatcher((IEnumerable<TChar>)seq);

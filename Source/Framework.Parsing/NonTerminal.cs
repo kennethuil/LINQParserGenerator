@@ -8,6 +8,14 @@ namespace Framework.Parsing
     [Serializable]
     public class NonTerminal : GrammarSymbol
     {
+        public NonTerminal()
+        {
+        }
+
+        public NonTerminal(string name)
+        {
+            Name = name;
+        }
     }
 
     [Serializable]
@@ -24,6 +32,16 @@ namespace Framework.Parsing
                 if (value != typeof(TValue))
                     throw new NotSupportedException();
             }
+        }
+
+        public NonTerminal()
+            : base()
+        {
+        }
+
+        public NonTerminal(string name)
+            : base(name)
+        {
         }
     }
 }

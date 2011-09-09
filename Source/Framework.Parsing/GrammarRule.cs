@@ -97,6 +97,11 @@ namespace Framework.Parsing
             }
         }
 
+        public void SetStatefulAction<TParseState>(Expression<Func<TParseState, TValue>> action)
+        {
+            base.Action = action;
+        }
+
         public new static GrammarRule<TValue> Create(NonTerminal left, params GrammarSymbol[] right)
         {
             return new GrammarRule<TValue> { LeftHandSide = left, RightHandSide = right };
@@ -116,6 +121,11 @@ namespace Framework.Parsing
             {
                 base.Action = value;
             }
+        }
+
+        public void SetStatefulAction<TParseState>(Expression<Func<TParseState, TParam0, TValue>> action)
+        {
+            base.Action = action;
         }
 
         public new static GrammarRule<TParam0, TValue> Create(NonTerminal left, params GrammarSymbol[] right)
@@ -139,6 +149,11 @@ namespace Framework.Parsing
             }
         }
 
+        public void SetStatefulAction<TParseState>(Expression<Func<TParseState, TParam0, TParam1, TValue>> action)
+        {
+            base.Action = action;
+        }
+
         public new static GrammarRule<TParam0, TParam1, TValue> Create(NonTerminal left, params GrammarSymbol[] right)
         {
             return new GrammarRule<TParam0, TParam1, TValue> { LeftHandSide = left, RightHandSide = right };
@@ -159,6 +174,12 @@ namespace Framework.Parsing
                 base.Action = value;
             }
         }
+
+        public void SetStatefulAction<TParseState>(Expression<Func<TParseState, TParam0, TParam1, TParam2, TValue>> action)
+        {
+            base.Action = action;
+        }
+
         public new static GrammarRule<TParam0, TParam1, TParam2, TValue> Create(NonTerminal left, params GrammarSymbol[] right)
         {
             return new GrammarRule<TParam0, TParam1, TParam2, TValue> { LeftHandSide = left, RightHandSide = right };
@@ -180,6 +201,11 @@ namespace Framework.Parsing
             }
         }
 
+        public void SetStatefulAction<TParseState>(Expression<Func<TParseState, TParam0, TParam1, TParam2, TParam3, TValue>> action)
+        {
+            base.Action = action;
+        }
+
         public new static GrammarRule<TParam0, TParam1, TParam2, TParam3, TValue> Create(NonTerminal left, params GrammarSymbol[] right)
         {
             return new GrammarRule<TParam0, TParam1, TParam2, TParam3, TValue> { LeftHandSide = left, RightHandSide = right };
@@ -199,6 +225,11 @@ namespace Framework.Parsing
             {
                 base.Action = value;
             }
+        }
+
+        public void SetStatefulAction<TParseState>(Expression<Func<TParseState, TParam0, TParam1, TParam2, TParam3, TParam4, TValue>> action)
+        {
+            base.Action = action;
         }
 
         public new static GrammarRule<TParam0, TParam1, TParam2, TParam3, TParam4, TValue> Create(NonTerminal left, params GrammarSymbol[] right)

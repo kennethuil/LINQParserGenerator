@@ -18,11 +18,13 @@ namespace Framework.Parsing
         IExpressionHelper _expressionHelper;
         protected bool _includeSymbols;
         Dictionary<ISet<Terminal<TChar>>, MethodInfo> _terminalReaders = new Dictionary<ISet<Terminal<TChar>>, MethodInfo>();
+        protected Expression<Action<string>> _debugOut;
 
         public ParserGeneratorSession(ParserGenerator<TChar> pg, IExpressionHelper expressionHelper)
         {
             _parserGenerator = pg;
             _expressionHelper = expressionHelper;
+            //_debugOut = Expression.Lambda<Action<string>>(Expression.Block(), Expression.Parameter(typeof(string), "s"));
         }
 
         public LambdaExpression GetTerminal
@@ -127,6 +129,35 @@ namespace Framework.Parsing
             return this;
         }
 
+        public ParserGeneratorSession<TChar> DebugOutputIs(Expression<Action<string>> x)
+        {
+            _debugOut = x;
+            return this;
+        }
+
+        public static string Format(string format, object[] values)
+        {
+            return string.Format(format, values);
+        }
+
+        Expression DebugOut(string format, params Expression[] values)
+        {
+            if (_debugOut == null)
+            {
+                var t = Expression.Label(typeof(void));
+
+                return Expression.Label(t);
+            }
+
+            
+            var expFormat = Expression.Constant(format);
+            var expValues = Expression.NewArrayInit(typeof(object), from x in values select Expression.Convert(x, typeof(object)));
+            //var expMessage = Expression.Call(typeof(string).GetMethod("Format", BindingFlags.Static | BindingFlags.Public,
+            //    null, new Type[] {typeof(string), typeof(object[])}, null), expFormat, expValues);
+            var expMessage = Expression.Call(typeof(ParserGeneratorSession<TChar>), "Format", null, expFormat, expValues);
+            return Expression.Invoke(_debugOut, expMessage);
+        }
+
         /// <summary>
         /// Returns an Expression that reads the next terminal from the input stream
         /// </summary>
@@ -229,6 +260,7 @@ namespace Framework.Parsing
         {
             // Generate code to represent a "shift" action where the terminal does not have an associated value.  The value stack remains unchanged.
             var readTerminal = GetReadTerminal(stateParam, classifier, targetState, parserTypeBuilder);
+            
             var result = Expression.Call(callTarget, GetOutgoingParamList(stateParam, depthParam, stackValueParams, null));
             return Expression.Block(readTerminal, result);
         }
@@ -273,6 +305,7 @@ namespace Framework.Parsing
             NonTerminal nt = rule.LeftHandSide;
             var statements = new List<Expression>();
 
+            statements.Add(DebugOut("Reducing {0}", Expression.Constant(rule.ToString())));
             // Set the current nonterminal.  We will need this to pick the next state in our "goto" code.
             statements.Add(Expression.Invoke(this.SetNonTerminal, stateParam, Expression.Constant(allNonTerminals[nt])));
 
@@ -398,6 +431,7 @@ namespace Framework.Parsing
             }
             
             // The execution stack needs to have one frame popped for each symbol on the right hand side of the rule.
+            statements.Add(DebugOut("Reduced"));
             int depthChange = rule.RightHandSide.Count;
             statements.Add(Expression.Subtract(depthParam, Expression.Constant(depthChange)));
 
@@ -760,6 +794,8 @@ namespace Framework.Parsing
                                                           Expression.Block(
                                                               Expression.Invoke(SetTerminalValueExpr(expValue.Type), expParserState, expValue),
                                                               Expression.Invoke(SetTerminal, expParserState, Expression.Constant(terminalNumber)),
+                                                              DebugOut("Read terminal [{0}] with value {1}", 
+                                                                    Expression.Constant(term.Name),expValue),
                                                               Expression.Constant(terminalNumber)), true, handlerParams));
                     }
                     else if (term != Eof<TChar>.Instance)
@@ -767,6 +803,7 @@ namespace Framework.Parsing
                                                       Expression.Lambda(
                                                           Expression.Block(
                                                             Expression.Invoke(SetTerminal, expParserState, Expression.Constant(terminalNumber)),
+                                                            DebugOut("Read terminal [{0}]", Expression.Constant(term.Name)),
                                                             Expression.Constant(terminalNumber)),
                                                           true, expParserState));
 
@@ -1033,6 +1070,12 @@ namespace Framework.Parsing
         public new ParserGeneratorSession<TChar, TParseState> SetNonTerminalIs(Expression<Action<TParseState, int>> x)
         {
             SetNonTerminal = x;
+            return this;
+        }
+
+        public new ParserGeneratorSession<TChar, TParseState> DebugOutputIs(Expression<Action<string>> x)
+        {
+            _debugOut = x;
             return this;
         }
 

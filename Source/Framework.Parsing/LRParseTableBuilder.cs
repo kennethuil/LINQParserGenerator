@@ -287,11 +287,14 @@ namespace Framework.Parsing
             // Now the canonical set of LR1 Item sets is complete.  Use it to build the parse table.
 
             // TODO: Dependency-inject and use integrated logging.
+            /*
             foreach (var I in C)
             {
                 DumpItemSet(I);
             }
+             */
             return C;
+             
         }
     }
 }

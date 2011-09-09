@@ -7,3 +7,5 @@ C:\Projects\Parsing\Source.UnitTests\bin\Debug\Framework.CodeGen.pdb
 C:\Projects\Parsing\Source.UnitTests\bin\Debug\Framework.Parsing.pdb
 C:\Projects\Parsing\Source.UnitTests\obj\Debug\Source.UnitTests.dll
 C:\Projects\Parsing\Source.UnitTests\obj\Debug\Source.UnitTests.pdb
+C:\Projects\Parsing\Source.UnitTests\bin\Debug\CompilerSample.dll
+C:\Projects\Parsing\Source.UnitTests\bin\Debug\CompilerSample.pdb
