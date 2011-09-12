@@ -209,6 +209,7 @@ namespace Source.UnitTests.CompilerSampleTests
                 Expression.Parameter(typeof(double), "y"));
             Assert.AreNotEqual(0, compiler(ps));
             Assert.AreNotEqual(0, ps.Errors.Count);
+            Assert.Less(ps.Errors.First().ExpectedTerminalNames.Count, g.Terminals.Count);
 
         }
     }
