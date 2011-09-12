@@ -23,6 +23,8 @@ namespace Framework.Parsing
         protected ISet<Terminal<TChar>> _skipTerminals;
         protected LambdaExpression _rejectHandler;
         protected LambdaExpression _eofHandler;
+        protected LambdaExpression _getLocation;
+        protected LambdaExpression _errorCollection;
 
         public TerminalClassifierSession(TerminalClassifier<TChar> pg, Type parseStateType, Type resultType)
         {
@@ -100,6 +102,8 @@ namespace Framework.Parsing
             created._rejectHandler = _rejectHandler;
             created._skipTerminals = new HashSet<Terminal<TChar>>(_skipTerminals);
             created._unmarkPosition = _unmarkPosition;
+            created._getLocation = _getLocation;
+            created._errorCollection = _errorCollection;
             return created;
         }
 
@@ -149,6 +153,18 @@ namespace Framework.Parsing
             return this;
         }
 
+        public TerminalClassifierSession<TChar> GetLocationIs(LambdaExpression x)
+        {
+            _getLocation = x;
+            return this;
+        }
+
+        public TerminalClassifierSession<TChar> ErrorCollectionIs(LambdaExpression x)
+        {
+            _errorCollection = x;
+            return this;
+        }
+
         public bool IsCapturing(Terminal<TChar> term)
         {
             return _capturingTerminals.Contains(term);
@@ -168,6 +184,27 @@ namespace Framework.Parsing
         bool IsCapturing(FiniteAutomatonState<TChar> state)
         {
             return _capturingTerminals.Intersect(state.PossibleTerminals).Count() > 0;
+        }
+
+        LambdaExpression GetRejectHandler(IEnumerable<Terminal<TChar>> expectedTerminals)
+        {
+            if (_getLocation == null || _errorCollection == null)
+                return _rejectHandler;
+            var expState = _rejectHandler.Parameters[0];
+            var rejectBody = _rejectHandler.Body;
+            var expLocation = Expression.Parameter(typeof(ParseLocation), "location");
+            var expError = Expression.Parameter(typeof(ParseError<TChar>), "error");
+            return Expression.Lambda(
+                Expression.Block(
+                    new[] { expLocation, expError },
+                    Expression.Assign(expLocation, Expression.Invoke(_getLocation, expState)),
+                    Expression.Assign(expError, Expression.New(typeof(ParseError<TChar>))),
+                    Expression.Assign(Expression.PropertyOrField(expError, "ExpectedTerminalNames"),
+                        Expression.NewArrayInit(typeof(string), from x in expectedTerminals select Expression.Constant(x.Name))),
+                    Expression.Call(Expression.Invoke(_errorCollection, expState),
+                        "Add", null, expError),
+                    rejectBody), expState);
+
         }
 
         void AddBlock(
@@ -192,7 +229,7 @@ namespace Framework.Parsing
             var accepting = state.AcceptTerminals.FirstOrDefault();
 
             Expression noTransition;
-            Expression reject = Expression.Goto(returnLabel, Expression.Invoke(_rejectHandler, parseState));
+            Expression reject = Expression.Goto(returnLabel, Expression.Invoke(GetRejectHandler(handlers.Keys), parseState));
 
             if (accepting != null)
             {
@@ -369,7 +406,7 @@ namespace Framework.Parsing
                     (isCapturing ? new Expression[] { Expression.Invoke(_markPosition, stateParam) } : new Expression[] { })).Concat(
                     new Expression[] { stateBlocks[combined] }).Concat(
                     stateBlocks.Values.Except(new Expression[] { stateBlocks[combined] })).Concat(
-                    new Expression[] { Expression.Label(returnLabel, Expression.Invoke(_rejectHandler, stateParam)) }));
+                    new Expression[] { Expression.Label(returnLabel, Expression.Invoke(GetRejectHandler(handlers.Keys), stateParam)) }));
 
             // And wrap it up in a lambda.
             var result = Expression.Lambda(body, true, stateParam);
@@ -507,6 +544,18 @@ namespace Framework.Parsing
         public new TerminalClassifierSession<TChar, TParseState, THandlerResult> EofHandlerIs(Expression<Func<TParseState,THandlerResult>> x)
         {
             _eofHandler = x;
+            return this;
+        }
+
+        public new TerminalClassifierSession<TChar, TParseState, THandlerResult> GetLocationIs(Expression<Func<TParseState, ParseLocation>> x)
+        {
+            _getLocation = x;
+            return this;
+        }
+
+        public new TerminalClassifierSession<TChar, TParseState, THandlerResult> ErrorCollectionIs(Expression<Func<TParseState, ICollection<ParseError<TChar>>>> x)
+        {
+            _errorCollection = x;
             return this;
         }
 

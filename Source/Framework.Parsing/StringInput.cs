@@ -46,5 +46,10 @@ namespace Framework.Parsing
             var text = _input.Substring(_markPos.Value, _pos - _markPos.Value);
             return text;
         }
+
+        public int GetPos()
+        {
+            return _pos;
+        }
     }
 }

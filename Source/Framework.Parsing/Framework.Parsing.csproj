@@ -62,6 +62,8 @@
     <Compile Include="LRParseTable.cs" />
     <Compile Include="LRParseTableBuilder.cs" />
     <Compile Include="NonTerminal.cs" />
+    <Compile Include="ParseError.cs" />
+    <Compile Include="ParseLocation.cs" />
     <Compile Include="ParserGenerator.cs" />
     <Compile Include="ParserGeneratorSession.cs" />
     <Compile Include="RegexCharNFABuilder.cs" />
