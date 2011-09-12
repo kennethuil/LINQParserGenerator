@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -17,6 +18,7 @@ namespace Framework.Parsing
         ParserGenerator<TChar> _parserGenerator;
         IExpressionHelper _expressionHelper;
         protected bool _includeSymbols;
+        protected bool _useDefaultValue;
         Dictionary<ISet<Terminal<TChar>>, MethodInfo> _terminalReaders = new Dictionary<ISet<Terminal<TChar>>, MethodInfo>();
         protected Expression<Action<string>> _debugOut;
 
@@ -129,6 +131,12 @@ namespace Framework.Parsing
             return this;
         }
 
+        public ParserGeneratorSession<TChar> UseDefaultValue(bool use)
+        {
+            _useDefaultValue = use;
+            return this;
+        }
+
         public ParserGeneratorSession<TChar> DebugOutputIs(Expression<Action<string>> x)
         {
             _debugOut = x;
@@ -209,9 +217,15 @@ namespace Framework.Parsing
             
             // If there is a pushed value, the outgoing list should be the result of the push, otherwise the
             // outgoing list is the same as the incoming list.
-            IEnumerable<Expression> outgoingStackValues =
-                expPushedValue == null ? stackValueParams :
-                new Expression[] { Expression.Convert(expPushedValue, stackValueParams.First().Type) }.Concat(stackValueParams.Take(stackValueParams.Length - 1));
+            
+            IEnumerable<Expression> outgoingStackValues;
+
+            if (stackValueParams.Length == 0)
+                outgoingStackValues = new Expression[0];
+            else
+                outgoingStackValues =
+                    expPushedValue == null ? stackValueParams :
+                    new Expression[] { Expression.Convert(expPushedValue, stackValueParams.First().Type) }.Concat(stackValueParams.Take(stackValueParams.Length - 1));
 
             return new Expression[] { stateParam, Expression.Add(depthParam, Expression.Constant(1)) }.Concat(outgoingStackValues);
         }
@@ -355,7 +369,13 @@ namespace Framework.Parsing
 
                 var inputSymbols = (from x in rule.RightHandSide where (x.ValueType != null && x.ValueType != typeof(void)) select x).ToList();
                 Expression ntValue = null;
-                if (inputSymbols.Count() == 1)
+                if (stackValueParams.Length == 0 && inputSymbols.Count > 0)
+                {
+                    if (!_useDefaultValue)
+                        throw new ApplicationException("No value-producing actions defined anywhere - did you forget to set the actions or set UseDefaultValue?");
+                    ntValue = Expression.Default(destType);
+                }
+                else if (inputSymbols.Count() == 1)
                 {
                     if (destType.IsAssignableFrom(inputSymbols[0].ValueType))
                     {
@@ -376,7 +396,9 @@ namespace Framework.Parsing
                     }
                     else
                     {
-                        throw new ApplicationException("Right hand symbol's value cannot be cast to the left hand symbol's type");
+                        if (!_useDefaultValue)
+                            throw new ApplicationException("Right hand symbol's value cannot be cast to the left hand symbol's type");
+                        ntValue = Expression.Default(destType);
                     }
                 }
                 else if (inputSymbols.Count() == 2)
@@ -420,8 +442,12 @@ namespace Framework.Parsing
                     
                     if (ntValue == null)
                     {
-                        // We're completely out of luck, the developer really needs to put a semantic action on this rule.
-                        throw new ApplicationException("No symbol values found on the right side that can be case to the left hand symbol's type");
+                        if (!_useDefaultValue)
+                        {
+                            // We're completely out of luck, the developer really needs to put a semantic action on this rule.
+                            throw new ApplicationException("No symbol values found on the right side that can be case to the left hand symbol's type");
+                        }
+                        ntValue = Expression.Default(destType);
                     }
                 }
 
@@ -1104,6 +1130,12 @@ namespace Framework.Parsing
         public new ParserGeneratorSession<TChar, TParseState> IncludeSymbols(bool include)
         {
             _includeSymbols = include;
+            return this;
+        }
+
+        public new ParserGeneratorSession<TChar, TParseState> UseDefaultValue(bool use)
+        {
+            _useDefaultValue = use;
             return this;
         }
 

@@ -55,6 +55,45 @@ namespace Source.UnitTests.CompilerSampleTests
         }
 
         [Test]
+        public void TestParserSucceedsWithoutAValue()
+        {
+            LanguageGrammar<Expression> g = new LanguageGrammar<Expression>();
+
+            // Spin up a parser for our language.
+            // TODO: Package this up and simplify it.
+            var expressionHelper = new ExpressionHelper();
+            var classifierGen = new TerminalClassifier<char>(expressionHelper);
+            var classifierSession = classifierGen.Classifier<ParserState, int>()
+                .CurrentCharExprIs(x => x.CurrentChar())
+                .GetFromMarkExprIs(x => x.GetFromMarkedPos())
+                .HasCurrentCharExprIs(x => x.HasCurrentChar())
+                .MarkPosExprIs(x => x.MarkPos())
+                .MoveNextCharExprIs(x => x.MoveNextChar())
+                .UnmarkPosExprIs(x => x.UnmarkPos());
+
+            var parserGen = new ParserGenerator<char>(expressionHelper);
+            var parseTableBuilder = new LRParseTableBuilder();
+            var parseTable = parseTableBuilder.BuildParseTable(g);
+            var session = parserGen.NewSession<ParserState>()
+                .NonTerminalValueExprIs<object>(x => x.NonTerminalValue)
+                .TerminalValueExprIs<string>(x => x.TerminalStringValue)
+                .TerminalValueExprIs<int>(x => x.TerminalIntValue)
+                .TerminalValueExprIs<double>(x => x.TerminalDoubleValue)
+                .TerminalIs(x => x.Terminal)
+                .NonTerminalIs(x => x.NonTerminal)
+                .IncludeSymbols(true)
+                .UseDefaultValue(true)
+                .DebugOutputIs(x => Debug.WriteLine(x))
+                .Generate("LanguageParser", parseTable, classifierSession);
+            // At this point, session is an Expression<ParserState,int> representing our parser.
+            // We can compile it into a delegate or a MethodBuilder.  For the examples, we'll use a delegate.
+            var compiler = session.Compile();
+
+            // Create a parser state object and initialize it.
+            ParserState ps = new ParserState("x*y+2.0");
+            Assert.AreEqual(0, compiler(ps));
+        }
+        [Test]
         public void TestParserProducesAValue()
         {
             // Create an instance of our language grammar and set handlers for its rules.
