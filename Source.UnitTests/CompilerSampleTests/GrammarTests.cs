@@ -114,6 +114,7 @@ namespace Source.UnitTests.CompilerSampleTests
             var expressionHelper = new ExpressionHelper();
             var classifierGen = new TerminalClassifier<char>(expressionHelper);
             var classifierSession = classifierGen.Classifier<ParserState, int>()
+                .AddSkipTerminal(new Terminal<char> {Name = "Whitespace", InitialState = RegexCharNFABuilder.RegexCompiler(@"\s+")})
                 .CurrentCharExprIs(x => x.CurrentChar())
                 .GetFromMarkExprIs(x => x.GetFromMarkedPos())
                 .HasCurrentCharExprIs(x => x.HasCurrentChar())
@@ -139,7 +140,7 @@ namespace Source.UnitTests.CompilerSampleTests
             var compiler = session.Compile();
 
             // Create a parser state object and initialize it.
-            ParserState ps = new ParserState("x*y+2.0");
+            ParserState ps = new ParserState("x*y + 2.0");
             ps.SetParameters(
                 Expression.Parameter(typeof(double), "x"),
                 Expression.Parameter(typeof(double), "y"));

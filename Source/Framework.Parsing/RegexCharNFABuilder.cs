@@ -3,13 +3,34 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Text;
+using System.Threading;
 using Framework.CodeGen;
+using Framework.CodeGen.Expressions;
 
 
 namespace Framework.Parsing
 {
     public class RegexCharNFABuilder : RegexNFABuilder<char>
     {
+        static Func<string, FiniteAutomatonState<char>> _regexCompiler;
+
+        public static Func<string, FiniteAutomatonState<char>> RegexCompiler
+        {
+            get
+            {
+                var instance = Interlocked.CompareExchange(ref _regexCompiler, null, null);
+                if (instance != null)
+                    return instance;
+                var expressionHelper = new ExpressionHelper();
+                var regexNFABuilder = new RegexCharNFABuilder(expressionHelper);
+                var expr = regexNFABuilder.CreateRegexParser("TestRegexCompile");
+                
+                var regexCompiler = expr.Compile();
+                Interlocked.CompareExchange(ref _regexCompiler, regexCompiler, null);
+                return _regexCompiler;
+            }
+        }
+
         public RegexCharNFABuilder(IExpressionHelper expressionHelper) : base(expressionHelper)
         {
         }
