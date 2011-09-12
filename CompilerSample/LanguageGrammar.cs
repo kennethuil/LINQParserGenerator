@@ -16,10 +16,13 @@ namespace CompilerSample
         static ExpressionHelper _expressionHelper;
         static LanguageGrammar()
         {
+            /*
             _expressionHelper = new ExpressionHelper();
             _regexNFABuilder = new RegexCharNFABuilder(_expressionHelper);
             var expr = _regexNFABuilder.CreateRegexParser("TestRegexCompile");
             _regexCompiler = expr.Compile();
+             */
+            _regexCompiler = RegexCharNFABuilder.RegexCompiler;
         }
 
         // Symbols and publicly manipulable rules.

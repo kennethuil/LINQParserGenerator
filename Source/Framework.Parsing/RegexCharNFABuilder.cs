@@ -23,7 +23,7 @@ namespace Framework.Parsing
                     return instance;
                 var expressionHelper = new ExpressionHelper();
                 var regexNFABuilder = new RegexCharNFABuilder(expressionHelper);
-                var expr = regexNFABuilder.CreateRegexParser("TestRegexCompile");
+                var expr = regexNFABuilder.CreateRegexParser("Framework.Parsing.RegexCharNFABuilder.Compiler");
                 
                 var regexCompiler = expr.Compile();
                 Interlocked.CompareExchange(ref _regexCompiler, regexCompiler, null);
