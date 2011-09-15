@@ -401,7 +401,7 @@ namespace Framework.Parsing
                         ntValue = Expression.Default(destType);
                     }
                 }
-                else if (inputSymbols.Count() == 2)
+                else if (inputSymbols.Count() == 2 && stackValueParams.Length >= 2)
                 {
                     var p0 = Expression.Convert(stackValueParams[0], inputSymbols[1].ValueType);
                     var p1 = Expression.Convert(stackValueParams[1], inputSymbols[0].ValueType);

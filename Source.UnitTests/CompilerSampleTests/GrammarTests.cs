@@ -94,6 +94,57 @@ namespace Source.UnitTests.CompilerSampleTests
             ParserState ps = new ParserState("x*y+2.0");
             Assert.AreEqual(0, compiler(ps));
         }
+
+        [Test]
+        public void TestQuotedStringValue()
+        {
+            LanguageGrammar<string> g = new LanguageGrammar<string>();
+            g.StringLiteralRule.Action = (s) => s;
+
+            // Spin up a parser for our language.
+            // TODO: Package this up and simplify it.
+            var expressionHelper = new ExpressionHelper();
+            var classifierGen = new TerminalClassifier<char>(expressionHelper);
+            var classifierSession = classifierGen.Classifier<ParserState, int>()
+                .AddSkipTerminal(new Terminal<char> { Name = "Whitespace", InitialState = RegexCharNFABuilder.RegexCompiler(@"\s+") })
+                .CurrentCharExprIs(x => x.CurrentChar())
+                .GetFromMarkExprIs(x => x.GetFromMarkedPos())
+                .HasCurrentCharExprIs(x => x.HasCurrentChar())
+                .MarkPosExprIs(x => x.MarkPos())
+                .MoveNextCharExprIs(x => x.MoveNextChar())
+                .UnmarkPosExprIs(x => x.UnmarkPos());
+
+            var parserGen = new ParserGenerator<char>(expressionHelper);
+            var parseTableBuilder = new LRParseTableBuilder();
+            var parseTable = parseTableBuilder.BuildParseTable(g);
+            var session = parserGen.NewSession<ParserState>()
+                .NonTerminalValueExprIs<object>(x => x.NonTerminalValue)
+                .TerminalValueExprIs<string>(x => x.TerminalStringValue)
+                .TerminalValueExprIs<int>(x => x.TerminalIntValue)
+                .TerminalValueExprIs<double>(x => x.TerminalDoubleValue)
+                .TerminalIs(x => x.Terminal)
+                .NonTerminalIs(x => x.NonTerminal)
+                .IncludeSymbols(true)
+                .UseDefaultValue(true)
+                .DebugOutputIs(x => Debug.WriteLine(x))
+                .Generate("LanguageParser", parseTable, classifierSession);
+            // At this point, session is an Expression<ParserState,int> representing our parser.
+            // We can compile it into a delegate or a MethodBuilder.  For the examples, we'll use a delegate.
+            var compiler = session.Compile();
+
+            ParserState ps = new ParserState("\"This is a quoted string\"");
+            Assert.AreEqual(0, compiler(ps));
+            Assert.AreEqual("This is a quoted string", ps.NonTerminalValue);
+
+            ps = new ParserState("\"Here are some \\t escape characters\\r\\netc...\"");
+            Assert.AreEqual(0, compiler(ps));
+            Assert.AreEqual("Here are some \t escape characters\r\netc...", ps.NonTerminalValue);
+
+            ps = new ParserState("\"And more \\\\ escape \\\" characters\"");
+            Assert.AreEqual(0, compiler(ps));
+            Assert.AreEqual("And more \\ escape \" characters", ps.NonTerminalValue);
+        }
+
         [Test]
         public void TestParserProducesAValue()
         {
@@ -103,6 +154,7 @@ namespace Source.UnitTests.CompilerSampleTests
             g.DivideRule.Action = (e1, e2) => Expression.Divide(e1, e2);
             g.DoubleLiteralRule.Action = (d) => Expression.Constant(d);
             g.IntLiteralRule.Action = (i) => Expression.Constant(i);
+            g.StringLiteralRule.Action = (s) => Expression.Constant(s);
             g.MinusRule.Action = (e1, e2) => Expression.Subtract(e1, e2);
             g.ModRule.Action = (e1, e2) => Expression.Modulo(e1, e2);
             g.MultiplyRule.Action = (e1, e2) => Expression.Multiply(e1, e2);
@@ -163,6 +215,7 @@ namespace Source.UnitTests.CompilerSampleTests
             g.DivideRule.Action = (e1, e2) => Expression.Divide(e1, e2);
             g.DoubleLiteralRule.Action = (d) => Expression.Constant(d);
             g.IntLiteralRule.Action = (i) => Expression.Constant(i);
+            g.StringLiteralRule.Action = (s) => Expression.Constant(s);
             g.MinusRule.Action = (e1, e2) => Expression.Subtract(e1, e2);
             g.ModRule.Action = (e1, e2) => Expression.Modulo(e1, e2);
             g.MultiplyRule.Action = (e1, e2) => Expression.Multiply(e1, e2);

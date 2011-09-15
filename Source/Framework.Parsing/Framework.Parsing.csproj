@@ -70,6 +70,7 @@
     <Compile Include="RegexGrammar.cs" />
     <Compile Include="RegexNFABuilder.cs" />
     <Compile Include="RegexNFABuilderSupport.cs" />
+    <Compile Include="StateBuilder.cs" />
     <Compile Include="StringInput.cs" />
     <Compile Include="TerminalClassifier.cs" />
     <Compile Include="TerminalClassifierSession.cs" />
@@ -79,6 +80,7 @@
     <Compile Include="SetComparer.cs" />
     <Compile Include="ShiftAction.cs" />
     <Compile Include="Terminal.cs" />
+    <Compile Include="TransitionBuilder.cs" />
     <Compile Include="Utilities.cs" />
   </ItemGroup>
   <ItemGroup>

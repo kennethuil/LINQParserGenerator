@@ -39,6 +39,5 @@ namespace Framework.Parsing
         /// Reaching this state means that the given terminals are definitely not in the process of being matched.
         /// </summary>
         public IEnumerable<Terminal<TChar>> RejectTerminals { get; set; }
-
     }
 }

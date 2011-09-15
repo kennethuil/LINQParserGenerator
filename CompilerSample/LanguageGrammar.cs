@@ -16,21 +16,127 @@ namespace CompilerSample
         static ExpressionHelper _expressionHelper;
         static LanguageGrammar()
         {
-            /*
-            _expressionHelper = new ExpressionHelper();
-            _regexNFABuilder = new RegexCharNFABuilder(_expressionHelper);
-            var expr = _regexNFABuilder.CreateRegexParser("TestRegexCompile");
-            _regexCompiler = expr.Compile();
-             */
             _regexCompiler = RegexCharNFABuilder.RegexCompiler;
         }
 
         // Symbols and publicly manipulable rules.
-        Terminal<char, string> Identifier = new Terminal<char, string> { Name = "Identifier", InitialState = _regexCompiler(@"[A-Za-z][A-Za-z0-9]*") };
-        Terminal<char, int> IntLiteral = new Terminal<char, int> {Name = "IntLiteral", InitialState = _regexCompiler(@"\d+"),
+
+
+        private static FiniteAutomatonState<char> IdentifierFSM()
+        {
+            FiniteAutomatonState<char> second;
+            return new StateBuilder<char>()
+                .OnAnyOf(Utilities.AllLetters())
+                .GotoNew(out second)
+                .Accept()
+                .OnAnyOf(Utilities.AllLetters(), Utilities.AllDigits())
+                .Goto(second)
+                .InitialState;
+        }
+
+        private static FiniteAutomatonState<char> IntLiteralFSM()
+        {
+            FiniteAutomatonState<char> next;
+            return new StateBuilder<char>()
+                .OnAnyOf(Utilities.AllDigits())
+                .GotoNew(out next)
+                .Accept()
+                .OnAnyOf(Utilities.AllDigits())
+                .Goto(next)
+                .InitialState;
+        }
+
+        private static FiniteAutomatonState<char> FloatLiteralFSM()
+        {
+            FiniteAutomatonState<char> nextInt;
+            FiniteAutomatonState<char> nextDecimal;
+            return new StateBuilder<char>()
+                .OnAnyOf(Utilities.AllDigits()).GotoNew(out nextInt)
+                .OnAnyOf(Utilities.AllDigits()).Goto(nextInt)
+                .OnAnyOf('.').GotoNew()
+                .OnAnyOf(Utilities.AllDigits()).GotoNew(out nextDecimal)
+                .Accept()
+                .OnAnyOf(Utilities.AllDigits()).Goto(nextDecimal)
+                .InitialState;
+        }
+
+        private static FiniteAutomatonState<char> QuotedStringFSM()
+        {
+            FiniteAutomatonState<char> inner;
+            return new StateBuilder<char>()
+                .OnAnyOf('\"').GotoNew(out inner)
+                .OnAnyExcept('\"', '\\').Goto(inner)
+                .OnAnyOf('\\').GotoNew().OnAnything().Goto(inner)
+                .OnAnyOf('\"').GotoNew().Accept().InitialState;
+
+        }
+
+        //Terminal<char, string> Identifier = new Terminal<char, string> { Name = "Identifier", InitialState = _regexCompiler(@"[A-Za-z][A-Za-z0-9]*") };
+        Terminal<char, string> Identifier = new Terminal<char, string>
+        {
+            Name = "Identifier",
+            InitialState = IdentifierFSM()
+        };
+
+        public static string QuotedString(string qstring)
+        {
+            qstring = qstring.Substring(1, qstring.Length - 2);
+            StringBuilder result = new StringBuilder();
+            int i;
+            for (i = 0; i < qstring.Length; ++i)
+            {
+                var ch = qstring[i];
+                if (ch == '\\')
+                {
+                    ++i;
+                    char translated;
+                    switch (qstring[i])
+                    {
+                        case '0':
+                            translated = '\0';
+                            break;
+                        case 'a':
+                            translated = '\a';
+                            break;
+                        case 'b':
+                            translated = '\b';
+                            break;
+                        case 'f':
+                            translated = '\f';
+                            break;
+                        case 'n':
+                            translated = '\n';
+                            break;
+                        case 'r':
+                            translated = '\r';
+                            break;
+                        case 't':
+                            translated = '\t';
+                            break;
+                        case 'v':
+                            translated = '\v';
+                            break;
+                        default:
+                            translated = qstring[i];
+                            break;
+                    };
+                    result.Append(translated);
+                    continue;
+                }
+                result.Append(ch);
+            }
+            return result.ToString();
+        }
+
+        Terminal<char, int> IntLiteral = new Terminal<char, int>
+        {
+            Name = "IntLiteral",
+            InitialState = IntLiteralFSM(),
             StringAction = (l)=>int.Parse(l)};
-        Terminal<char, double> FloatingLiteral = new Terminal<char, double> { Name = "FloatLiteral", InitialState = _regexCompiler(@"\d+\.\d+"),
+        Terminal<char, double> FloatingLiteral = new Terminal<char, double> { Name = "FloatLiteral", InitialState = FloatLiteralFSM(),
             StringAction = (s)=>double.Parse(s)};
+        Terminal<char, string> StringLiteral = new Terminal<char, string> { Name = "StringLiteral", InitialState = QuotedStringFSM(),
+            StringAction = (s)=>QuotedString(s)};
         Terminal<char> Plus = new Terminal<char> { Name = "+", InitialState = TerminalClassifier<char>.GetLiteralMatcher("+") };
         Terminal<char> Minus = new Terminal<char> { Name = "-", InitialState = TerminalClassifier<char>.GetLiteralMatcher("-") };
         Terminal<char> Star = new Terminal<char> { Name = "*", InitialState = TerminalClassifier<char>.GetLiteralMatcher("*") };
@@ -68,6 +174,7 @@ namespace CompilerSample
         public readonly GrammarRule<TValue, TValue, TValue> DivideRule;
         public readonly GrammarRule<TValue, TValue, TValue> ModRule;
         public readonly GrammarRule<TValue, TValue> NegateRule;
+        public readonly GrammarRule<string, TValue> StringLiteralRule;
 
 
         public LanguageGrammar()
@@ -77,6 +184,7 @@ namespace CompilerSample
 
                 IntLiteralRule = GrammarRule<int, TValue>.Create(PrimaryExp, IntLiteral),
                 DoubleLiteralRule = GrammarRule<double, TValue>.Create(PrimaryExp, FloatingLiteral),
+                StringLiteralRule = GrammarRule<string, TValue>.Create(PrimaryExp, StringLiteral),
                 VariableRefRule = GrammarRule<string, TValue>.Create(PrimaryExp, Identifier),
                 NegateRule = GrammarRule<TValue, TValue>.Create(PrimaryExp, Minus, PrimaryExp),
                 GrammarRule<TValue, TValue>.Create(PrimaryExp, LeftParen, Expression, RightParen),
