@@ -27,31 +27,6 @@ namespace Framework.Parsing
             _expressionHelper = helper;
         }
 
-        void AddRelationship(IDictionary<Expression<Func<TChar, bool>>, ISet<Expression<Func<TChar, bool>>>> relations,
-            Expression<Func<TChar, bool>> a,
-            Expression<Func<TChar, bool>> b)
-        {
-            ISet<Expression<Func<TChar, bool>>> targets;
-            if (!relations.TryGetValue(a, out targets))
-            {
-                targets = new HashSet<Expression<Func<TChar,bool>>>();
-                relations.Add(a, targets);
-            }
-            targets.Add(b);
-        }
-        
-        public void AddImplies(Expression<Func<TChar, bool>> a, Expression<Func<TChar, bool>> b)
-        {
-            AddRelationship(_implies, _canonicalizer.GetInstance(a), 
-                _canonicalizer.GetInstance(b));
-            AddOverlaps(_canonicalizer.GetInstance(b), _canonicalizer.GetInstance(a));
-        }
-
-        public void AddOverlaps(Expression<Func<TChar, bool>> a, Expression<Func<TChar, bool>> b)
-        {
-            AddRelationship(_overlaps, _canonicalizer.GetInstance(a), _canonicalizer.GetInstance(b));
-        }
-
         // A set of states that will be turned into a single DFA state.
         class StateSet
         {
@@ -77,14 +52,6 @@ namespace Framework.Parsing
             {
                 return States.GetHashCode() + RejectedTerminals.GetHashCode();
             }
-        }
-
-        bool Implies(Expression<Func<TChar, bool>> a, Expression<Func<TChar, bool>> b)
-        {
-            ISet<Expression<Func<TChar, bool>>> implied;
-            if (!_implies.TryGetValue(a, out implied))
-                return false;
-            return implied.Contains(b);
         }
 
         IEnumerable<T> EmptyIfNull<T>(IEnumerable<T> e)
