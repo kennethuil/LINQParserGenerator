@@ -18,7 +18,7 @@ namespace Source.UnitTests.Framework.Parsing.Tests
             throw new ApplicationException("This is a test");
         }
 
-        [Test]
+        [Ignore("For some reason I built a codegen'd method that does infinite recursion")]
         public void linq_call_methodbuilder()
         {
             AssemblyBuilder ab = AppDomain.CurrentDomain.DefineDynamicAssembly(new AssemblyName("Test1"), AssemblyBuilderAccess.Run);

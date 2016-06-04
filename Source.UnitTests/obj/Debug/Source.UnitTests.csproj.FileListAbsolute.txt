@@ -9,3 +9,16 @@ C:\Projects\Parsing\Source.UnitTests\obj\Debug\Source.UnitTests.dll
 C:\Projects\Parsing\Source.UnitTests\obj\Debug\Source.UnitTests.pdb
 C:\Projects\Parsing\Source.UnitTests\bin\Debug\CompilerSample.dll
 C:\Projects\Parsing\Source.UnitTests\bin\Debug\CompilerSample.pdb
+C:\Projects\LINQParserGenerator\Source.UnitTests\bin\Debug\Source.UnitTests.dll
+C:\Projects\LINQParserGenerator\Source.UnitTests\bin\Debug\Source.UnitTests.pdb
+C:\Projects\LINQParserGenerator\Source.UnitTests\bin\Debug\CompilerSample.dll
+C:\Projects\LINQParserGenerator\Source.UnitTests\bin\Debug\Framework.CodeGen.dll
+C:\Projects\LINQParserGenerator\Source.UnitTests\bin\Debug\Framework.Parsing.dll
+C:\Projects\LINQParserGenerator\Source.UnitTests\bin\Debug\nunit.framework.dll
+C:\Projects\LINQParserGenerator\Source.UnitTests\bin\Debug\CompilerSample.pdb
+C:\Projects\LINQParserGenerator\Source.UnitTests\bin\Debug\Framework.CodeGen.pdb
+C:\Projects\LINQParserGenerator\Source.UnitTests\bin\Debug\Framework.Parsing.pdb
+C:\Projects\LINQParserGenerator\Source.UnitTests\bin\Debug\nunit.framework.xml
+C:\Projects\LINQParserGenerator\Source.UnitTests\obj\Debug\Source.UnitTests.csprojResolveAssemblyReference.cache
+C:\Projects\LINQParserGenerator\Source.UnitTests\obj\Debug\Source.UnitTests.dll
+C:\Projects\LINQParserGenerator\Source.UnitTests\obj\Debug\Source.UnitTests.pdb

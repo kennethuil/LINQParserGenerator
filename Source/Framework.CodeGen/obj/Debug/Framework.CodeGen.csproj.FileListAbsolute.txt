@@ -5,3 +5,9 @@ C:\Projects\Parsing\Source\Framework.CodeGen\bin\Debug\Framework.CodeGen.dll.las
 C:\Projects\Parsing\Source\Framework.CodeGen\obj\Debug\ResolveAssemblyReference.cache
 C:\Projects\Parsing\Source\Framework.CodeGen\obj\Debug\Framework.CodeGen.dll
 C:\Projects\Parsing\Source\Framework.CodeGen\obj\Debug\Framework.CodeGen.pdb
+C:\Projects\LINQParserGenerator\Source\Framework.CodeGen\bin\Debug\Framework.CodeGen.dll
+C:\Projects\LINQParserGenerator\Source\Framework.CodeGen\bin\Debug\Framework.CodeGen.pdb
+C:\Projects\LINQParserGenerator\Source\Framework.CodeGen\bin\Debug\Framework.CodeGen.dll.CodeAnalysisLog.xml
+C:\Projects\LINQParserGenerator\Source\Framework.CodeGen\bin\Debug\Framework.CodeGen.dll.lastcodeanalysissucceeded
+C:\Projects\LINQParserGenerator\Source\Framework.CodeGen\obj\Debug\Framework.CodeGen.dll
+C:\Projects\LINQParserGenerator\Source\Framework.CodeGen\obj\Debug\Framework.CodeGen.pdb
