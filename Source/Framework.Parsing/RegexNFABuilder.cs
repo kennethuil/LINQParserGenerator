@@ -15,7 +15,7 @@ namespace Framework.Parsing
         public RegexNFABuilder(IExpressionHelper expressionHelper)
         {
             _expressionHelper = expressionHelper;
-            _classifierGen = new TerminalClassifier<char>(expressionHelper);
+            _classifierGen = new TerminalClassifier<char>();
             _parserGen = new ParserGenerator<char>(expressionHelper);
         }
 

@@ -1,30 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Linq.Expressions;
-using System.Text;
-using System.Threading;
-using Framework.CodeGen;
-using Framework.Parsing;
 
 namespace Framework.Parsing
 {
     public class TerminalClassifier<TChar> where TChar : IComparable<TChar>, IEquatable<TChar>
     {
-        Canonicalizer<Expression<Func<TChar, bool>>> _canonicalizer = new Canonicalizer<Expression<Func<TChar, bool>>>
-            (new ExpressionEqualityComparer<Expression<Func<TChar, bool>>>());
-
-        // For each entry, if entry.Key is true, everything in entry.Value might be true.  Also, everything in entry.Value might be false.
-        IDictionary<Expression<Func<TChar, bool>>, ISet<Expression<Func<TChar, bool>>>> _overlaps = new Dictionary<Expression<Func<TChar, bool>>, ISet<Expression<Func<TChar, bool>>>>();
-
-        // For each entry, if entry.Key is true, everything in entry.Value is definitely true.
-        IDictionary<Expression<Func<TChar, bool>>, ISet<Expression<Func<TChar, bool>>>> _implies = new Dictionary<Expression<Func<TChar, bool>>, ISet<Expression<Func<TChar, bool>>>>();
-
-        IExpressionHelper _expressionHelper;
-
-        public TerminalClassifier(IExpressionHelper helper)
+        public TerminalClassifier()
         {
-            _expressionHelper = helper;
         }
 
         // A set of states that will be turned into a single DFA state.
@@ -447,11 +430,6 @@ namespace Framework.Parsing
         public static FiniteAutomatonState<TChar> GetLiteralMatcher(params TChar[] seq)
         {
             return GetLiteralMatcher((IEnumerable<TChar>)seq);
-        }
-
-        public TerminalClassifierSession<TChar> Classifier(Type parseStateType, Type resultType)
-        {
-            return new TerminalClassifierSession<TChar>(this, parseStateType, resultType);
         }
 
         public TerminalClassifierSession<TChar, TParseState, THandlerResult> Classifier<TParseState, THandlerResult>()

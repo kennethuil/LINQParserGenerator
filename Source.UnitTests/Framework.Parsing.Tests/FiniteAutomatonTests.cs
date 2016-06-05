@@ -115,7 +115,7 @@ namespace Source.UnitTests.Framework.Parsing.Tests
             var matchf = new HashSet<char> { 'f' };
             var matchSpace = Utilities.AllWhitespace();
 
-            _parserGenerator = new TerminalClassifier<char>(_expressionHelper);
+            _parserGenerator = new TerminalClassifier<char>();
             // Simple XML tags (no attributes)
             _openTag = new Terminal<char>
             {

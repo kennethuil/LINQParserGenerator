@@ -11,3 +11,4 @@ C:\Projects\LINQParserGenerator\Source\Framework.CodeGen\bin\Debug\Framework.Cod
 C:\Projects\LINQParserGenerator\Source\Framework.CodeGen\bin\Debug\Framework.CodeGen.dll.lastcodeanalysissucceeded
 C:\Projects\LINQParserGenerator\Source\Framework.CodeGen\obj\Debug\Framework.CodeGen.dll
 C:\Projects\LINQParserGenerator\Source\Framework.CodeGen\obj\Debug\Framework.CodeGen.pdb
+C:\Projects\LINQParserGenerator\Source\Framework.CodeGen\obj\Debug\Framework.CodeGen.csprojResolveAssemblyReference.cache

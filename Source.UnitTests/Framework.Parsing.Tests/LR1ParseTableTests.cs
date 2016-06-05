@@ -47,7 +47,7 @@ namespace ParsingTests
             var expr = _regexNFABuilder.CreateRegexParser("TestRegexCompile");
             _regexCompiler = expr.Compile();
 
-            _classifierGen = new TerminalClassifier<char>(_expressionHelper);
+            _classifierGen = new TerminalClassifier<char>();
             // Terminals with no associated parse value.
 
             // Whitespace
