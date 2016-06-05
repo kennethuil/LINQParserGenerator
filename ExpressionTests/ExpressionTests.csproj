@@ -49,7 +49,7 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Source\Framework.CodeGen\Framework.CodeGen.csproj">
+    <ProjectReference Include="..\Framework.CodeGen\Framework.CodeGen.csproj">
       <Project>{775DB3EF-1790-47D4-9BF4-28E080D5DDC0}</Project>
       <Name>Framework.CodeGen</Name>
     </ProjectReference>

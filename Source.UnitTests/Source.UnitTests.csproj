@@ -70,11 +70,11 @@
       <Project>{7DA11452-5AA2-4FD3-8F47-06D21EA7B958}</Project>
       <Name>CompilerSample</Name>
     </ProjectReference>
-    <ProjectReference Include="..\Source\Framework.CodeGen\Framework.CodeGen.csproj">
+    <ProjectReference Include="..\Framework.CodeGen\Framework.CodeGen.csproj">
       <Project>{775DB3EF-1790-47D4-9BF4-28E080D5DDC0}</Project>
       <Name>Framework.CodeGen</Name>
     </ProjectReference>
-    <ProjectReference Include="..\Source\Framework.Parsing\Framework.Parsing.csproj">
+    <ProjectReference Include="..\Framework.Parsing\Framework.Parsing.csproj">
       <Project>{3D9FF2B8-0F65-416F-8A93-D81129CF329E}</Project>
       <Name>Framework.Parsing</Name>
     </ProjectReference>
