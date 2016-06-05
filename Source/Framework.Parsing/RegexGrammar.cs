@@ -77,7 +77,8 @@ namespace Framework.Parsing
         {
             return new Terminal<char>
             {
-                InitialState = TerminalClassifier<char>.GetLiteralMatcher(str),
+                // TODO: method overloading and generic type inference not playing well together here.
+                InitialState = TerminalClassifier.GetLiteralMatcher<char>(str),
                 Name = terminalName
             };
         }
@@ -86,7 +87,8 @@ namespace Framework.Parsing
         {
             return new Terminal<char, TValue>
             {
-                InitialState = TerminalClassifier<char>.GetLiteralMatcher(str),
+                // TODO: method overloading and generic type inference not playing well together here.
+                InitialState = TerminalClassifier.GetLiteralMatcher<char>(str),
                 Name = terminalName
             };
         }
@@ -96,7 +98,8 @@ namespace Framework.Parsing
             var cRepresented = Expression.Lambda<Func<char>>(Expression.Constant(represented));
             return new Terminal<char, char>
             {
-                InitialState = TerminalClassifier<char>.GetLiteralMatcher(escapeSequence),
+                // TODO: method overloading and generic type inference not playing well together here.
+                InitialState = TerminalClassifier.GetLiteralMatcher<char>(escapeSequence),
                 Name = terminalName,
                 NonCapturingAction = cRepresented
             };
@@ -109,7 +112,7 @@ namespace Framework.Parsing
             //FiniteAutomatonState<char>[] states = GetCharSequenceStates(charMatches);
             var term = new Terminal<char, TValue>
             {
-                InitialState = TerminalClassifier<char>.GetSequenceMatcher(charMatches),
+                InitialState = TerminalClassifier.GetSequenceMatcher(charMatches),
                 Name = terminalName
             };
             return term;

@@ -9,7 +9,7 @@ namespace Framework.Parsing
 {
     public class TerminalClassifierSession<TChar> where TChar : IComparable<TChar>, IEquatable<TChar>
     {
-        protected TerminalClassifier<TChar> _parserGenerator;
+        //protected TerminalClassifier<TChar> _parserGenerator;
         protected Type _resultType;
         protected Type _parseStateType;
         protected LambdaExpression _hasCurrentChar;
@@ -26,22 +26,14 @@ namespace Framework.Parsing
         protected LambdaExpression _getLocation;
         protected LambdaExpression _errorCollection;
 
-        public TerminalClassifierSession(TerminalClassifier<TChar> pg, Type parseStateType, Type resultType)
+        public TerminalClassifierSession(Type parseStateType, Type resultType)
         {
-            _parserGenerator = pg;
+            //_parserGenerator = pg;
             _handlers = new Dictionary<Terminal<TChar>, LambdaExpression>();
             _resultType = resultType;
             _parseStateType = parseStateType;
             _capturingTerminals = new HashSet<Terminal<TChar>>();
             _skipTerminals = new HashSet<Terminal<TChar>>();
-        }
-
-        public TerminalClassifier<TChar> Parent
-        {
-            get
-            {
-                return _parserGenerator;
-            }
         }
 
 
@@ -91,7 +83,7 @@ namespace Framework.Parsing
 
         public TerminalClassifierSession<TChar> CreateWithNewResultType(Type t)
         {
-            var created = new TerminalClassifierSession<TChar>(_parserGenerator, _parseStateType, t);
+            var created = new TerminalClassifierSession<TChar>(_parseStateType, t);
             created._capturingTerminals = new HashSet<Terminal<TChar>>(_capturingTerminals);
             created._currentChar = _currentChar;
             created._eofHandler = _eofHandler;
@@ -378,7 +370,7 @@ namespace Framework.Parsing
 
         public LambdaExpression Generate(IDictionary<Terminal<TChar>, LambdaExpression> handlers)
         {
-            FiniteAutomatonState<TChar> combined = _parserGenerator.CombineRecognizers(handlers.Keys.Concat(_skipTerminals).ToList());
+            FiniteAutomatonState<TChar> combined = TerminalClassifier.CombineRecognizers(handlers.Keys.Concat(_skipTerminals).ToList());
             var stateParam = Expression.Parameter(_parseStateType, "parseState");
             // Now we have a DFA, turn it into a lambda expression.
             // Each state gets a label target.
@@ -423,8 +415,8 @@ namespace Framework.Parsing
     public class TerminalClassifierSession<TChar, TParseState, THandlerResult> : TerminalClassifierSession<TChar>
         where TChar : IComparable<TChar>, IEquatable<TChar>
     {
-        public TerminalClassifierSession(TerminalClassifier<TChar> pg)
-            : base(pg, typeof(TParseState), typeof(THandlerResult))
+        public TerminalClassifierSession()
+            : base(typeof(TParseState), typeof(THandlerResult))
         {
 
         }
@@ -569,7 +561,7 @@ namespace Framework.Parsing
         {
             var t = typeof(T);
 
-            var created = new TerminalClassifierSession<TChar, TParseState, T>(_parserGenerator);
+            var created = new TerminalClassifierSession<TChar, TParseState, T>();
             created._capturingTerminals = new HashSet<Terminal<TChar>>(_capturingTerminals);
             created._currentChar = _currentChar;
             created._eofHandler = _eofHandler;

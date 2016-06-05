@@ -96,7 +96,7 @@ namespace Source.UnitTests.Framework.Parsing.Tests
         Terminal<char> _identifier;
         Terminal<char> _whitespace;
         IExpressionHelper _expressionHelper;
-        TerminalClassifier<char> _parserGenerator;
+        //TerminalClassifier<char> _parserGenerator;
 
         [TestFixtureSetUp]
         public void Initialize()
@@ -115,7 +115,7 @@ namespace Source.UnitTests.Framework.Parsing.Tests
             var matchf = new HashSet<char> { 'f' };
             var matchSpace = Utilities.AllWhitespace();
 
-            _parserGenerator = new TerminalClassifier<char>();
+            //_parserGenerator = new TerminalClassifier<char>();
             // Simple XML tags (no attributes)
             _openTag = new Terminal<char>
             {
@@ -439,7 +439,7 @@ namespace Source.UnitTests.Framework.Parsing.Tests
             Debug.WriteLine("");
 
 
-            var combined = _parserGenerator.CombineRecognizers(new[] { _closeTag, _openTag, _leafTag });
+            var combined = TerminalClassifier.CombineRecognizers(new[] { _closeTag, _openTag, _leafTag });
 
             Debug.WriteLine("Combined recognizer:");
             DumpFiniteAutomaton(combined);
@@ -470,7 +470,8 @@ namespace Source.UnitTests.Framework.Parsing.Tests
             Expression<Func<TextReader, TerminalMatch>> foundLeafTag = r => TerminalMatch.LeafTag;
             Expression<Func<TextReader, TerminalMatch>> foundNoTag = r => TerminalMatch.None;
 
-            var classifier = _parserGenerator.Classifier<TextReader, TerminalMatch>()
+            //var classifier = _parserGenerator.Classifier<TextReader, TerminalMatch>()
+            var classifier = new TerminalClassifierSession<char, TextReader, TerminalMatch>()
                 .HasCurrentCharExprIs(r => r.Peek() != -1)
                 .CurrentCharExprIs(r => (char)r.Peek())
                 .MoveNextCharExprIs(r => r.Read())
@@ -519,7 +520,7 @@ namespace Source.UnitTests.Framework.Parsing.Tests
             Expression<Func<TextReader, TerminalMatch>> foundNone = (r) => TerminalMatch.None;
 
 
-            var classifier = _parserGenerator.Classifier<TextReader, TerminalMatch>()
+            var classifier = new TerminalClassifierSession<char, TextReader, TerminalMatch>()
                 .HasCurrentCharExprIs(r => r.Peek() != -1)
                 .CurrentCharExprIs(r => (char)r.Peek())
                 .MoveNextCharExprIs(r => r.Read())
@@ -570,7 +571,7 @@ namespace Source.UnitTests.Framework.Parsing.Tests
         {
             Expression<Func<TestStringInput, string, TerminalMatch>> capture = ((t, m) => t.Capture(m, TerminalMatch.Identifier));
 
-            var classifier = _parserGenerator.Classifier<TestStringInput, TerminalMatch>()
+            var classifier = new TerminalClassifierSession<char, TestStringInput, TerminalMatch>()
                 .HasCurrentCharExprIs(r => r.HasCurrentChar())
                 .CurrentCharExprIs(r => r.CurrentChar())
                 .MoveNextCharExprIs(r => r.MoveNextChar())
@@ -622,7 +623,7 @@ namespace Source.UnitTests.Framework.Parsing.Tests
         {
             Expression<Func<TestStringInput, string, TerminalMatch>> capture = ((t, m) => t.Capture(m, TerminalMatch.Identifier));
 
-            var classifier = _parserGenerator.Classifier<TestStringInput, TerminalMatch>()
+            var classifier = new TerminalClassifierSession<char, TestStringInput, TerminalMatch>()
                 .HasCurrentCharExprIs(r => r.HasCurrentChar())
                 .CurrentCharExprIs(r => r.CurrentChar())
                 .MoveNextCharExprIs(r => r.MoveNextChar())

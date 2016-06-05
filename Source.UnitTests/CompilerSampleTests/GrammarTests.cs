@@ -63,8 +63,8 @@ namespace Source.UnitTests.CompilerSampleTests
             // Spin up a parser for our language.
             // TODO: Package this up and simplify it.
             var expressionHelper = new ExpressionHelper();
-            var classifierGen = new TerminalClassifier<char>();
-            var classifierSession = classifierGen.Classifier<ParserState, int>()
+            //var classifierGen = new TerminalClassifier<char>();
+            var classifierSession = new TerminalClassifierSession<char, ParserState, int>()
                 .CurrentCharExprIs(x => x.CurrentChar())
                 .GetFromMarkExprIs(x => x.GetFromMarkedPos())
                 .HasCurrentCharExprIs(x => x.HasCurrentChar())
@@ -104,8 +104,8 @@ namespace Source.UnitTests.CompilerSampleTests
             // Spin up a parser for our language.
             // TODO: Package this up and simplify it.
             var expressionHelper = new ExpressionHelper();
-            var classifierGen = new TerminalClassifier<char>();
-            var classifierSession = classifierGen.Classifier<ParserState, int>()
+            //var classifierGen = new TerminalClassifier<char>();
+            var classifierSession = new TerminalClassifierSession<char, ParserState, int>()
                 .AddSkipTerminal(new Terminal<char> { Name = "Whitespace", InitialState = RegexCharNFABuilder.RegexCompiler(@"\s+") })
                 .CurrentCharExprIs(x => x.CurrentChar())
                 .GetFromMarkExprIs(x => x.GetFromMarkedPos())
@@ -165,8 +165,7 @@ namespace Source.UnitTests.CompilerSampleTests
             // Spin up a parser for our language.
             // TODO: Package this up and simplify it.
             var expressionHelper = new ExpressionHelper();
-            var classifierGen = new TerminalClassifier<char>();
-            var classifierSession = classifierGen.Classifier<ParserState, int>()
+            var classifierSession = new TerminalClassifierSession<char, ParserState, int>()
                 .AddSkipTerminal(new Terminal<char> {Name = "Whitespace", InitialState = RegexCharNFABuilder.RegexCompiler(@"\s+")})
                 .CurrentCharExprIs(x => x.CurrentChar())
                 .GetFromMarkExprIs(x => x.GetFromMarkedPos())
@@ -226,8 +225,7 @@ namespace Source.UnitTests.CompilerSampleTests
             // Spin up a parser for our language.
             // TODO: Package this up and simplify it.
             var expressionHelper = new ExpressionHelper();
-            var classifierGen = new TerminalClassifier<char>();
-            var classifierSession = classifierGen.Classifier<ParserState, int>()
+            var classifierSession = new TerminalClassifierSession<char, ParserState, int>()
                 .AddSkipTerminal(new Terminal<char> { Name = "Whitespace", InitialState = RegexCharNFABuilder.RegexCompiler(@"\s+") })
                 .CurrentCharExprIs(x => x.CurrentChar())
                 .GetFromMarkExprIs(x => x.GetFromMarkedPos())

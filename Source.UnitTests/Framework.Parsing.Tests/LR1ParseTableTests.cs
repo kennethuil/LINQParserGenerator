@@ -27,7 +27,7 @@ namespace ParsingTests
         Terminal<char> _closeParen;
         Terminal<char> _whitespace;
 
-        TerminalClassifier<char> _classifierGen;
+        //TerminalClassifier<char> _classifierGen;
         IExpressionHelper _expressionHelper;
         Func<string, FiniteAutomatonState<char>> _regexCompiler;
         RegexCharNFABuilder _regexNFABuilder;
@@ -47,7 +47,7 @@ namespace ParsingTests
             var expr = _regexNFABuilder.CreateRegexParser("TestRegexCompile");
             _regexCompiler = expr.Compile();
 
-            _classifierGen = new TerminalClassifier<char>();
+           // _classifierGen = new TerminalClassifier<char>();
             // Terminals with no associated parse value.
 
             // Whitespace
@@ -90,7 +90,7 @@ namespace ParsingTests
             var term = GetNumberTerminal<double>(x => double.Parse(x));
             Expression<Func<TestStringInput, string, double>> capture = ((t, s) => double.Parse(s));
 
-            var classifier = _classifierGen.Classifier<TestStringInput, double>()
+            var classifier = new TerminalClassifierSession<char, TestStringInput, double>()
                 .HasCurrentCharExprIs(r => r.HasCurrentChar())
                 .CurrentCharExprIs(r => r.CurrentChar())
                 .MoveNextCharExprIs(r => r.MoveNextChar())
@@ -111,7 +111,7 @@ namespace ParsingTests
         public void TestTokenize()
         {
             var term = GetNumberTerminal<double>(x => double.Parse(x));
-            var classifier = _classifierGen.Classifier<TestStringInput, TokenType>()
+            var classifier = new TerminalClassifierSession<char, TestStringInput, TokenType>()
                 .HasCurrentCharExprIs(r => r.HasCurrentChar())
                 .CurrentCharExprIs(r => r.CurrentChar())
                 .MoveNextCharExprIs(r => r.MoveNextChar())
@@ -300,7 +300,7 @@ namespace ParsingTests
                         var parseTableBuilder = new LRParseTableBuilder();
             var parseTable = parseTableBuilder.BuildParseTable(g);
 
-            var classifier = _classifierGen.Classifier<ParseState<object>, object>()
+            var classifier = new TerminalClassifierSession<char, ParseState<object>, object>()
                 .HasCurrentCharExprIs(ps => ps.HasCurrentChar())
                 .CurrentCharExprIs(ps => ps.CurrentChar())
                 .MoveNextCharExprIs(ps => ps.MoveNextChar())
@@ -487,7 +487,7 @@ namespace ParsingTests
 
         private TerminalClassifierSession<char, TestStringInput, bool> GetClassifier()
         {
-            return _classifierGen.Classifier<TestStringInput, bool>()
+            return new TerminalClassifierSession<char, TestStringInput, bool>()
                 .HasCurrentCharExprIs(r => r.HasCurrentChar())
                 .CurrentCharExprIs(r => r.CurrentChar())
                 .MoveNextCharExprIs(r => r.MoveNextChar())
@@ -531,7 +531,7 @@ namespace ParsingTests
             var parseTable = parseTableBuilder.BuildParseTable(g);
             parseTable.Dump();
 
-            var classifier = _classifierGen.Classifier<ParseState<object>, int>()
+            var classifier = new TerminalClassifierSession<char, ParseState<object>, int>()
                 .HasCurrentCharExprIs(ps => ps.HasCurrentChar())
                 .CurrentCharExprIs(ps => ps.CurrentChar())
                 .MoveNextCharExprIs(ps => ps.MoveNextChar())

@@ -10,12 +10,12 @@ namespace Framework.Parsing
     public abstract class RegexNFABuilder<TChar> where TChar : IComparable<TChar>, IEquatable<TChar>
     {
         IExpressionHelper _expressionHelper;
-        TerminalClassifier<char> _classifierGen;
+        //TerminalClassifier<char> _classifierGen;
         ParserGenerator<char> _parserGen;
         public RegexNFABuilder(IExpressionHelper expressionHelper)
         {
             _expressionHelper = expressionHelper;
-            _classifierGen = new TerminalClassifier<char>();
+            //_classifierGen = new TerminalClassifier<char>();
             _parserGen = new ParserGenerator<char>(expressionHelper);
         }
 
@@ -80,7 +80,8 @@ namespace Framework.Parsing
             var parseTableBuilder = new LRParseTableBuilder();
             var parseTable = parseTableBuilder.BuildParseTable(g);
 
-            var classifier = _classifierGen.Classifier<RegexNFABuilderSupport.ParserState<TChar>, NFAFragment<TChar>>()
+            //var classifier = _classifierGen.Classifier<RegexNFABuilderSupport.ParserState<TChar>, NFAFragment<TChar>>()
+            var classifier = new TerminalClassifierSession<char, RegexNFABuilderSupport.ParserState<TChar>, NFAFragment<TChar>>()
                 .HasCurrentCharExprIs(ps => ps.HasCurrentChar())
                 .CurrentCharExprIs(ps => ps.CurrentChar())
                 .MoveNextCharExprIs(ps => ps.MoveNextChar())

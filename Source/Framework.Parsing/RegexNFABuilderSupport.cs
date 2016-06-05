@@ -11,13 +11,13 @@ namespace Framework.Parsing
     public class RegexNFABuilderSupport
     {
         protected IExpressionHelper _expressionHelper;
-        protected TerminalClassifier<char> _classifierGen;
+        //protected TerminalClassifier<char> _classifierGen;
         protected ParserGenerator<char> _parserGen;
 
         public RegexNFABuilderSupport(IExpressionHelper expressionHelper)
         {
             _expressionHelper = expressionHelper;
-            _classifierGen = new TerminalClassifier<char>();
+            //_classifierGen = new TerminalClassifier<char>();
             _parserGen = new ParserGenerator<char>(expressionHelper);
         }
 
