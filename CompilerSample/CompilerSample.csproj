@@ -53,6 +53,10 @@
       <Project>{3D9FF2B8-0F65-416F-8A93-D81129CF329E}</Project>
       <Name>Framework.Parsing</Name>
     </ProjectReference>
+    <ProjectReference Include="..\LinqExpressionParserGenerator\LinqExpressionParserGenerator.csproj">
+      <Project>{25a5c97a-2f2a-4d82-aa23-54c2ee6246aa}</Project>
+      <Name>LinqExpressionParserGenerator</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

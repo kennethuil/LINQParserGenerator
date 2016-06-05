@@ -181,7 +181,8 @@ namespace Framework.Parsing
         {
             if (parserType != null)
             {
-                var possibleTerminals = _parserGenerator.GetPossibleTerminals(targetState);
+                //var possibleTerminals = _parserGenerator.GetPossibleTerminals(targetState);
+                var possibleTerminals = targetState.GetPossibleTerminals();
                 // See if there's already a read method for this set of possible terminals.  If not, create a new one.
                 MethodInfo method;
                 if (!_terminalReaders.TryGetValue(possibleTerminals, out method))
@@ -199,7 +200,7 @@ namespace Framework.Parsing
             }
             // No type builder, so we have nowhere to put the read method.  Inline it here.
             // NOTE: Don't make a habit of it, or state methods will get rather large.
-            return Expression.Invoke(classifier.Generate(_parserGenerator.GetPossibleTerminals(targetState)), stateParam);
+            return Expression.Invoke(classifier.Generate(targetState.GetPossibleTerminals()), stateParam);
         }
 
         /// <summary>

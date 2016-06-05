@@ -1,6 +1,8 @@
 ﻿
-Microsoft Visual Studio Solution File, Format Version 11.00
-# Visual Studio 2010
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 14
+VisualStudioVersion = 14.0.25123.0
+MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Framework.Parsing", "Framework.Parsing\Framework.Parsing.csproj", "{3D9FF2B8-0F65-416F-8A93-D81129CF329E}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Framework.CodeGen", "Framework.CodeGen\Framework.CodeGen.csproj", "{775DB3EF-1790-47D4-9BF4-28E080D5DDC0}"
@@ -12,6 +14,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Framework.Sql", "Framework.Sql\Framework.Sql.csproj", "{D7CC7B1A-1C5B-4E73-B326-7888FA103A9E}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CompilerSample", "CompilerSample\CompilerSample.csproj", "{7DA11452-5AA2-4FD3-8F47-06D21EA7B958}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LinqExpressionParserGenerator", "LinqExpressionParserGenerator\LinqExpressionParserGenerator.csproj", "{25A5C97A-2F2A-4D82-AA23-54C2EE6246AA}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -83,6 +87,18 @@ Global
 		{7DA11452-5AA2-4FD3-8F47-06D21EA7B958}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
 		{7DA11452-5AA2-4FD3-8F47-06D21EA7B958}.Release|Mixed Platforms.Build.0 = Release|Any CPU
 		{7DA11452-5AA2-4FD3-8F47-06D21EA7B958}.Release|x86.ActiveCfg = Release|Any CPU
+		{25A5C97A-2F2A-4D82-AA23-54C2EE6246AA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{25A5C97A-2F2A-4D82-AA23-54C2EE6246AA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{25A5C97A-2F2A-4D82-AA23-54C2EE6246AA}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
+		{25A5C97A-2F2A-4D82-AA23-54C2EE6246AA}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
+		{25A5C97A-2F2A-4D82-AA23-54C2EE6246AA}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{25A5C97A-2F2A-4D82-AA23-54C2EE6246AA}.Debug|x86.Build.0 = Debug|Any CPU
+		{25A5C97A-2F2A-4D82-AA23-54C2EE6246AA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{25A5C97A-2F2A-4D82-AA23-54C2EE6246AA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{25A5C97A-2F2A-4D82-AA23-54C2EE6246AA}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{25A5C97A-2F2A-4D82-AA23-54C2EE6246AA}.Release|Mixed Platforms.Build.0 = Release|Any CPU
+		{25A5C97A-2F2A-4D82-AA23-54C2EE6246AA}.Release|x86.ActiveCfg = Release|Any CPU
+		{25A5C97A-2F2A-4D82-AA23-54C2EE6246AA}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
