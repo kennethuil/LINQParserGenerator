@@ -18,6 +18,7 @@ namespace Framework.Parsing
         [NonSerialized]
         LambdaExpression _action;
 
+        // TODO: Semantic actions should be representable with objects other than LINQ expressions.
         /// <summary>
         /// Code to execute when a terminal is successfully matched.  It can optionally take a collection of TChar (or, if TChar is char, a string),
         /// and should return a value of type ValueType.

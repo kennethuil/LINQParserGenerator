@@ -15,6 +15,9 @@ namespace Framework.Parsing
 
         int _hashCode;
 
+
+        // TODO: Action should support semantic actions that are represented by
+        // objects other than LINQ expressions.
         [NonSerialized]
         LambdaExpression _action;
         public LambdaExpression Action

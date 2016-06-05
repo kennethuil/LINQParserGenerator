@@ -63,16 +63,9 @@
     <Compile Include="NonTerminal.cs" />
     <Compile Include="ParseError.cs" />
     <Compile Include="ParseLocation.cs" />
-    <Compile Include="ParserGenerator.cs" />
-    <Compile Include="ParserGeneratorSession.cs" />
-    <Compile Include="RegexCharNFABuilder.cs" />
-    <Compile Include="RegexGrammar.cs" />
-    <Compile Include="RegexNFABuilder.cs" />
-    <Compile Include="RegexNFABuilderSupport.cs" />
     <Compile Include="StateBuilder.cs" />
     <Compile Include="StringInput.cs" />
     <Compile Include="TerminalClassifier.cs" />
-    <Compile Include="TerminalClassifierSession.cs" />
     <Compile Include="ParsingExtensions.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ReduceAction.cs" />
